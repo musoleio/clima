@@ -1,104 +1,133 @@
-import React, { useEffect, useState } from 'react';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableRow from '@mui/material/TableRow';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import Typography from '@mui/material/Typography';
-import TableContainer from '@mui/material/TableContainer';
-import { ThemeColor } from 'src/@core/layouts/types';
-import { getFirestore, collection, getDoc, doc } from 'firebase/firestore';
+// ** MUI Imports
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import Chip from '@mui/material/Chip'
+import Table from '@mui/material/Table'
+import TableRow from '@mui/material/TableRow'
+import TableHead from '@mui/material/TableHead'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import Typography from '@mui/material/Typography'
+import TableContainer from '@mui/material/TableContainer'
+
+
+// ** Types Imports
+import { ThemeColor } from 'src/@core/layouts/types'
+
+import { getFirestore, collection , query, where} from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import firebase from '../../../firebase/config';
-import { useRouter } from 'next/router';
-import PrivateRoute from '../../privateRoute';
-import exportDataToExcel from '../../../configs/exportToExcel';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import MenuItem from '@mui/material/MenuItem';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
-import { Pagination } from '@mui/lab';
-import { CircularProgress } from '@mui/material';
+import firebase from '../../../firebase/config'
+import PrivateRoute from "../../privateRoute";
+import {useRouter} from "next/router";
 
 interface StatusObj {
   [key: string]: {
-    color: ThemeColor;
-  };
+    color: ThemeColor
+  }
 }
 const statusObj: StatusObj = {
   pending: { color: 'info' },
   rejected: { color: 'error' },
-  accepted: { color: 'success' },
-};
+  accepted: { color: 'success' }
+}
 
-const OrdersPage = (props) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 10;
-  const router = useRouter();
-  const [searchTarget, setSearchTarget] = useState('nrc');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
-  const [value, loading, error] = useCollection(collection(getFirestore(firebase), 'orders'));
+const PendingOrdersPage = () => {
+  const [value, loading, error] = useCollection(
+    query(
+      collection(getFirestore(firebase), 'orders'),
+      where('orderStatus', 'not-in', ['accepted', 'rejected'])
+    )
+  );
 
-  // ... (other hooks and states)
+  const newData: { id: string,name: string; status: string; orderStatus: any; isCollected: any; itemNum: any; formType: any; installmentAmount: any; totalPrice: any; collectionDate: any }[] = [];
 
-  const handleExportClick = async () => {
-    if (value) {
-      setExporting(true);
-
-      const data = [];
-
-      for (const docSnapshot of value.docs) {
-        const orderData = docSnapshot.data();
-
-        // Fetch user data from the "users" collection
-        const userDocRef = doc(getFirestore(firebase), 'users', orderData.createdBy);
-        const userDocSnapshot = await getDoc(userDocRef);
-        const userData = userDocSnapshot.data();
-
-        // Add user data to the orderData object
-        orderData.agent = {
-          firstName: userData?.firstName || '',
-          lastName: userData?.lastName || '',
-        };
-
-        data.push(orderData);
-      }
-
-      exportDataToExcel(data, 'orders', 'output.xlsx', 'orders');
-
-      setExporting(false);
+  value?.forEach((doc) => {
+    console.log(`orderStatus is ${doc.orderStatus}`)
+    const data = doc.data();
+    const { firstName, lastName, orderStatus, isCollected, ...rest } = data;
+    const name = `${firstName} ${lastName}`;
+    let status;
+    if (orderStatus === 'accepted') {
+      status = 'accepted';
+    } else if (orderStatus === 'rejected') {
+      status = 'rejected';
+    } else {
+      status = 'pending';
     }
-  };
 
-  // ... (other functions)
+
+    newData.push({ name, status, orderStatus, isCollected, itemNum: rest.itemNum, formType:
+      rest.formType, installmentAmount: rest.installmentAmount,
+      totalPrice: rest.totalPrice, collectionDate: rest.collectionDate, ...rest , id:doc.id});
+  });
+
+
+
+  const latestData = newData
+
+
+
+
+
+  if (loading) {
+    return 'loading...'
+  }
+
+  if (error) {
+    return `Error fetching data: ${error}`
+  }
+
+  const router = useRouter()
+
+  //console.log(`Our value is ${JSON.stringify(value)}`)
 
   return (
     <PrivateRoute>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        {/* ... Search and filter controls ... */}
-        <Button variant="contained" onClick={handleExportClick} disabled={exporting}>
-          {exporting ? 'Exporting data...' : 'Export to Excel'}
-          {exporting && <CircularProgress size={20} style={{ marginLeft: '10px' }} />}
-        </Button>
-      </Box>
-      <Card>
-        {/* Table content */}
-      </Card>
-      <Pagination
-        count={Math.ceil(filteredData.length / ordersPerPage)}
-        page={currentPage}
-        onChange={handlePageChange}
-        color="primary"
-      />
+    <Card>
+      <TableContainer>
+        <Table sx={{ minWidth: 800 }} aria-label='table in dashboard'>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Number Of Items</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Form Type</TableCell>
+              <TableCell>Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {latestData.map((row) => (
+              <TableRow onClick={() => router.push(`/pages/orders/${row.id}`) } hover key={row.name} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
+                <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{row.name}</Typography>
+                  </Box>
+                </TableCell>
+                <TableCell>{row.itemNum}</TableCell>
+                <TableCell>{row.collectionDate}</TableCell>
+                <TableCell>{row.totalPrice}</TableCell>
+                <TableCell>{row.formType}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={row.status}
+                    color={statusObj[row.status].color}
+                    sx={{
+                      height: 24,
+                      fontSize: '0.75rem',
+                      textTransform: 'capitalize',
+                      '& .MuiChip-label': { fontWeight: 500 }
+                    }}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Card>
     </PrivateRoute>
-  );
-};
+  )
+}
 
-export default OrdersPage;
+export default PendingOrdersPage

@@ -57,7 +57,7 @@
     "firebase": "^9.21.0",
     "firebase-admin": "^11.7.0",
     "mdi-material-ui": "^7.1.0",
-    "next": "12.0.4",
+    "next": "^12.3.4",
     "next-paginate": "^0.1.0",
     "nprogress": "^0.2.0",
     "react": "17.0.2",
