@@ -47,10 +47,12 @@ const OrdersPage = (props) => {
   const router = useRouter()
   const [searchTarget, setSearchTarget] = useState('nrc');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState(''); // Initialize with an empty string
   const [filteredData, setFilteredData] = useState([]);
   const [value, loading, error] = useCollection(
     collection(getFirestore(firebase), 'orders')
   );
+  
   useEffect(() => {
     if (value) {
       const data = value.docs.map((doc) => {
@@ -60,12 +62,14 @@ const OrdersPage = (props) => {
           ...doc.data(),
         };
       });
-
+  
       const filtered = data.filter((item) => {
-        const { myID, ...rest } = item; // Destructure `myID` from `item`
-        return rest[searchTarget].toLowerCase().includes(searchQuery.toLowerCase());
+        const { myID, ...rest } = item;
+        const statusMatches = statusFilter === "" || rest.orderStatus.toLowerCase() === statusFilter.toLowerCase();
+        const queryMatches = searchQuery === "" || rest[searchTarget].toLowerCase().includes(searchQuery.toLowerCase());
+        return statusMatches && queryMatches;
       });
-
+  
       const newData = filtered.map((item) => {
         console.log(`Item ID is ${item.myID}`);
         const { firstName, lastName, orderStatus, isCollected, ...rest } = item;
@@ -82,20 +86,20 @@ const OrdersPage = (props) => {
           totalPrice: rest.totalPrice,
           collectionDate: rest.collectionDate,
           ...rest,
-          id: item.myID, // Use `myID` instead of `id`
+          id: item.myID,
         };
       });
-
-      const sortedData = newData
-        .sort((a, b) => {
-          const timestampA = a.timeStamp.seconds;
-          const timestampB = b.timeStamp.seconds;
-          return timestampB - timestampA;
-        });
-
+  
+      const sortedData = newData.sort((a, b) => {
+        const timestampA = a.timeStamp.seconds;
+        const timestampB = b.timeStamp.seconds;
+        return timestampB - timestampA;
+      });
+  
       setFilteredData(sortedData);
     }
-  }, [value, searchQuery, searchTarget]);
+  }, [value, searchQuery, searchTarget, statusFilter]);
+
 
 
 
@@ -210,6 +214,22 @@ const OrdersPage = (props) => {
   return (
     <PrivateRoute>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <FormControl sx={{ minWidth: 120, marginRight: '16px' }}>
+  <InputLabel id="status-filter-label">Status</InputLabel>
+  <Select
+    labelId="status-filter-label"
+    id="status-filter"
+    value={statusFilter}
+    onChange={(event) => setStatusFilter(event.target.value)}
+  >
+    <MenuItem value="">All</MenuItem>
+    <MenuItem value="pending">Pending</MenuItem>
+    <MenuItem value="accepted">Accepted</MenuItem>
+    <MenuItem value="rejected">Rejected</MenuItem>
+  </Select>
+</FormControl>
+</Box>
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel id="search-target-label">Search By</InputLabel>
           <Select
@@ -239,6 +259,8 @@ const OrdersPage = (props) => {
           {exporting && <CircularProgress size={20} style={{ marginLeft: '10px' }} />}
         </Button>
       </Box>
+     
+
     <Card>
       <TableContainer>
         <Table>
