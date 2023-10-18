@@ -6,25 +6,25 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 // ** MUI Components
+import { Alert } from '@mui/material'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Checkbox from '@mui/material/Checkbox'
-import TextField from '@mui/material/TextField'
-import InputLabel from '@mui/material/InputLabel'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import CardContent from '@mui/material/CardContent'
-import FormControl from '@mui/material/FormControl'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import { styled, useTheme } from '@mui/material/styles'
 import MuiCard, { CardProps } from '@mui/material/Card'
-import InputAdornment from '@mui/material/InputAdornment'
-import { Alert } from '@mui/material';
+import CardContent from '@mui/material/CardContent'
+import Checkbox from '@mui/material/Checkbox'
+import FormControl from '@mui/material/FormControl'
 import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import { styled, useTheme } from '@mui/material/styles'
 
 // ** Icons Imports
-import EyeOutline from 'mdi-material-ui/EyeOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
+import EyeOutline from 'mdi-material-ui/EyeOutline'
 
 // ** Configs
 import themeConfig from 'src/configs/themeConfig'
@@ -35,16 +35,17 @@ import BlankLayout from 'src/@core/layouts/BlankLayout'
 // ** Demo Imports
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
 
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
+import { collection, getFirestore } from "firebase/firestore"
+import { useCollection } from "react-firebase-hooks/firestore"
 import firebase from '../../../firebase/config'
-import {getAuth, signInWithEmailAndPassword} from "firebase/auth";
-import {useCollection} from "react-firebase-hooks/firestore";
-import {collection, getFirestore} from "firebase/firestore";
 
 
 interface State {
   password: string
   showPassword: boolean,
   email: string
+  department: string
 }
 
 // ** Styled Components
@@ -71,10 +72,10 @@ const LoginPage = () => {
     password: '',
     email: '',
     showPassword: false,
-
+    department: '',
   })
   const [loginError, setLoginError] = useState('');
-const auth = getAuth(firebase)
+  const auth = getAuth(firebase)
   const [admins, loading, error] = useCollection(
     collection(getFirestore(firebase), 'admins')
   );
@@ -97,9 +98,9 @@ const auth = getAuth(firebase)
   }
   const handleLogin = async (values) => {
     try {
-     // Check if the provided email exists in the `admins` collection
+      // Check if the provided email exists in the `admins` collection
       const isAdmin = admins && admins.docs.some
-      ((doc) => doc.data().email === values.email);
+        ((doc) => doc.data().email === values.email);
       if (!isAdmin) {
         // If the email does not exist in the `admins` collection, the user is not an admin
         setLoginError(`You are not an admin`)
@@ -121,7 +122,7 @@ const auth = getAuth(firebase)
 
 
 
-return (
+  return (
     <Box className='content-center'>
       <Card sx={{ zIndex: 1 }}>
         <CardContent sx={{ padding: theme => `${theme.spacing(12, 9, 7)} !important` }}>
@@ -215,8 +216,21 @@ return (
             )}
           </Box>
           <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()}>
-            <TextField autoFocus   onChange={handleChange('email')}
-                       fullWidth id='email' label='Email' sx={{ marginBottom: 4 }} />
+            <TextField autoFocus onChange={handleChange('email')}
+              fullWidth id='email' label='Email' sx={{ marginBottom: 4 }} />
+            {/* <FormControl fullWidth>
+              <InputLabel htmlFor='auth-login-department'>Department</InputLabel>
+              <Select
+                label="Department"
+                value={values.department}
+                onChange={handleChange('department')}
+                id="auth-login-department"
+                sx={{ marginBottom: 4 }}
+              >
+                <MenuItem value="Loans">Loans</MenuItem>
+                <MenuItem value="Hire/Purchase">Hire/Purchase</MenuItem>
+              </Select>
+            </FormControl> */}
             <FormControl fullWidth>
               <InputLabel htmlFor='auth-login-password'>Password</InputLabel>
               <OutlinedInput

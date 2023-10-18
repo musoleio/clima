@@ -1,5 +1,5 @@
 // ** React Imports
-import { useState, Fragment, ChangeEvent, MouseEvent, ReactNode } from 'react'
+import { ChangeEvent, Fragment, MouseEvent, ReactNode, useState } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
@@ -7,27 +7,27 @@ import Link from 'next/link'
 // ** MUI Components
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
+import MuiCard, { CardProps } from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import Checkbox from '@mui/material/Checkbox'
+import Divider from '@mui/material/Divider'
+import FormControl from '@mui/material/FormControl'
+import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
+import OutlinedInput from '@mui/material/OutlinedInput'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import InputLabel from '@mui/material/InputLabel'
-import IconButton from '@mui/material/IconButton'
-import CardContent from '@mui/material/CardContent'
-import FormControl from '@mui/material/FormControl'
-import OutlinedInput from '@mui/material/OutlinedInput'
 import { styled, useTheme } from '@mui/material/styles'
-import MuiCard, { CardProps } from '@mui/material/Card'
-import InputAdornment from '@mui/material/InputAdornment'
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
 
 // ** Icons Imports
-import Google from 'mdi-material-ui/Google'
-import Github from 'mdi-material-ui/Github'
-import Twitter from 'mdi-material-ui/Twitter'
-import Facebook from 'mdi-material-ui/Facebook'
-import EyeOutline from 'mdi-material-ui/EyeOutline'
 import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
+import EyeOutline from 'mdi-material-ui/EyeOutline'
+import Facebook from 'mdi-material-ui/Facebook'
+import Github from 'mdi-material-ui/Github'
+import Google from 'mdi-material-ui/Google'
+import Twitter from 'mdi-material-ui/Twitter'
 
 // ** Configs
 import themeConfig from 'src/configs/themeConfig'
@@ -36,10 +36,20 @@ import themeConfig from 'src/configs/themeConfig'
 import BlankLayout from 'src/@core/layouts/BlankLayout'
 
 // ** Demo Imports
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, getFirestore, serverTimestamp, setDoc } from "firebase/firestore"
+import { useRouter } from 'next/router'
+import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth'
+import firebase from 'src/firebase/config'
 import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
-import PrivateRoute from "../../privateRoute";
+
 
 interface State {
+  userName: string
+  email: string
+  department: string
   password: string
   showPassword: boolean
 }
@@ -66,13 +76,26 @@ const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ t
 
 const RegisterPage = () => {
   // ** States
+  const auth = getAuth(firebase)
   const [values, setValues] = useState<State>({
+    userName: '',
+    email: '',
+    department: '',
     password: '',
     showPassword: false
   })
 
+  const [
+    createUserWithEmailAndPassword,
+    user,
+    loading,
+    signUpError
+  ] = useCreateUserWithEmailAndPassword(auth)
+
   // ** Hook
   const theme = useTheme()
+  const router = useRouter()
+
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value })
@@ -84,8 +107,39 @@ const RegisterPage = () => {
     event.preventDefault()
   }
 
+  const handleSignUp = async (values) => {
+    try {
+      const adminUser = await createUserWithEmailAndPassword(values.email, values.password);
+
+      if (adminUser) {
+        const userInfo = {
+          name: values.userName,
+          email: values.email,
+          department: values.department,
+          dateJoined: serverTimestamp()
+        };
+        // const adminsRef = collection(getFirestore(firebase), 'admins');
+        // await addDoc(adminsRef, { userName, email, department, dateJoined: serverTimestamp() });
+
+        await setDoc(doc(getFirestore(firebase), 'admins', adminUser.user.uid), userInfo);
+
+        const data = await signInWithEmailAndPassword(auth, values.email, values.password);
+        if (data) {
+          const token = await data.user.getIdToken();
+          localStorage.setItem('authToken', token);
+          console.log(`Login token: ${token}`);
+
+          router.push('/');
+        }
+      }
+    } catch (error) {
+      console.error(`Encountered an error: ${signUpError}`);
+      console.error(error);
+    }
+
+  }
+
   return (
-    <PrivateRoute>
     <Box className='content-center'>
       <Card sx={{ zIndex: 1 }}>
         <CardContent sx={{ padding: theme => `${theme.spacing(12, 9, 7)} !important` }}>
@@ -169,8 +223,34 @@ const RegisterPage = () => {
             <Typography variant='body2'>Make your app management easy and fun!</Typography>
           </Box>
           <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()}>
-            <TextField autoFocus fullWidth id='username' label='Username' sx={{ marginBottom: 4 }} />
-            <TextField fullWidth type='email' label='Email' sx={{ marginBottom: 4 }} />
+            <TextField
+              autoFocus
+              fullWidth
+              id='username'
+              label='Username'
+              value={values.userName}
+              onChange={handleChange('userName')}
+              sx={{ marginBottom: 4 }} />
+            <TextField
+              fullWidth
+              type='email'
+              label='Email'
+              value={values.email}
+              onChange={handleChange('email')}
+              sx={{ marginBottom: 4 }} />
+            <FormControl fullWidth>
+              <InputLabel htmlFor='auth-login-department'>Department</InputLabel>
+              <Select
+                label="Department"
+                value={values.department}
+                onChange={handleChange('department')}
+                id="auth-login-department"
+                sx={{ marginBottom: 4 }}
+              >
+                <MenuItem value="loan">Loans</MenuItem>
+                <MenuItem value="hirePurchase">Hire/Purchase</MenuItem>
+              </Select>
+            </FormControl>
             <FormControl fullWidth>
               <InputLabel htmlFor='auth-register-password'>Password</InputLabel>
               <OutlinedInput
@@ -206,7 +286,13 @@ const RegisterPage = () => {
                 </Fragment>
               }
             />
-            <Button fullWidth size='large' type='submit' variant='contained' sx={{ marginBottom: 7 }}>
+            <Button
+              fullWidth
+              size='large'
+              type='submit'
+              variant='contained'
+              onClick={() => handleSignUp(values)}
+              sx={{ marginBottom: 7 }}>
               Sign up
             </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -249,7 +335,6 @@ const RegisterPage = () => {
       </Card>
       <FooterIllustrationsV1 />
     </Box>
-    </PrivateRoute>
   )
 }
 
