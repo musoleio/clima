@@ -1,34 +1,35 @@
+
+
 // ** MUI Imports
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
 import Table from '@mui/material/Table'
-import TableRow from '@mui/material/TableRow'
-import TableHead from '@mui/material/TableHead'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
-import Typography from '@mui/material/Typography'
 import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
 
 // ** Types Imports
 import { ThemeColor } from 'src/@core/layouts/types'
 
-import {getFirestore, collection, getDoc, doc} from 'firebase/firestore';
-import { useCollection } from 'react-firebase-hooks/firestore';
+import { Pagination } from "@mui/lab"
+import { CircularProgress } from "@mui/material"
+import Button from "@mui/material/Button"
+import FormControl from "@mui/material/FormControl"
+import InputLabel from "@mui/material/InputLabel"
+import MenuItem from "@mui/material/MenuItem"
+import Select from "@mui/material/Select"
+import TextField from "@mui/material/TextField"
+import { collection, doc, getDoc, getFirestore } from 'firebase/firestore'
+import { useRouter } from "next/router"
+import { useEffect, useState } from "react"
+import { useCollection } from 'react-firebase-hooks/firestore'
+import { useAuth } from 'src/configs/auth'
+import exportDataToExcel from "../../../configs/exportToExcel"
 import firebase from '../../../firebase/config'
-import {useRouter} from "next/router";
-import PrivateRoute from "../../privateRoute";
-import exportDataToExcel from "../../../configs/exportToExcel";
-import Button from "@mui/material/Button";
-import {useEffect, useState} from "react";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import MenuItem from "@mui/material/MenuItem";
-import InputLabel from "@mui/material/InputLabel";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import {Pagination} from "@mui/lab";
-import {CircularProgress} from "@mui/material";
+import PrivateRoute from "../../privateRoute"
 
 interface StatusObj {
   [key: string]: {
@@ -49,56 +50,74 @@ const OrdersPage = (props) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(''); // Initialize with an empty string
   const [filteredData, setFilteredData] = useState([]);
+  const { user, isAuthLoading, authError } = useAuth();
+
   const [value, loading, error] = useCollection(
     collection(getFirestore(firebase), 'orders')
   );
-  
+
   useEffect(() => {
-    if (value) {
-      const data = value.docs.map((doc) => {
-        console.log(`But data has ${doc.id}`);
-        return {
-          myID: doc.id,
-          ...doc.data(),
-        };
-      });
-  
-      const filtered = data.filter((item) => {
-        const { myID, ...rest } = item;
-        const statusMatches = statusFilter === "" || rest.orderStatus.toLowerCase() === statusFilter.toLowerCase();
-        const queryMatches = searchQuery === "" || rest[searchTarget].toLowerCase().includes(searchQuery.toLowerCase());
-        return statusMatches && queryMatches;
-      });
-  
-      const newData = filtered.map((item) => {
-        console.log(`Item ID is ${item.myID}`);
-        const { firstName, lastName, orderStatus, isCollected, ...rest } = item;
-        const name = `${firstName} ${lastName}`;
-        const status = orderStatus === 'accepted' ? 'accepted' : orderStatus === 'rejected' ? 'rejected' : 'pending';
-        return {
-          name,
-          status,
-          orderStatus,
-          isCollected,
-          itemNum: rest.itemNum,
-          formType: rest.formType,
-          installmentAmount: rest.installmentAmount,
-          totalPrice: rest.totalPrice,
-          collectionDate: rest.collectionDate,
-          ...rest,
-          id: item.myID,
-        };
-      });
-  
-      const sortedData = newData.sort((a, b) => {
-        const timestampA = a.timeStamp.seconds;
-        const timestampB = b.timeStamp.seconds;
-        return timestampB - timestampA;
-      });
-  
-      setFilteredData(sortedData);
+    let adminDepartment;
+    if (user) {
+      const adminDocRef = doc(getFirestore(firebase), 'admins', user.uid);
+      getDoc(adminDocRef)
+        .then(doc => {
+          if (doc.exists()) {
+            adminDepartment = doc.data().department
+            if (value) {
+              const data = value.docs
+                .filter((doc) => doc.data().formType === adminDepartment)
+                .map((doc) => {
+                  return {
+                    myID: doc.id,
+                    ...doc.data(),
+                  };
+                });
+
+              const filtered = data.filter((item) => {
+                const { myID, ...rest } = item;
+                const statusMatches = statusFilter === "" || rest.orderStatus.toLowerCase() === statusFilter.toLowerCase();
+                const queryMatches = searchQuery === "" || rest[searchTarget].toLowerCase().includes(searchQuery.toLowerCase());
+                return statusMatches && queryMatches;
+              });
+
+              const newData = filtered.map((item) => {
+                console.log(`Item ID is ${item.myID}`);
+                const { firstName, lastName, orderStatus, isCollected, ...rest } = item;
+                const name = `${firstName} ${lastName}`;
+                const status = orderStatus === 'accepted' ? 'accepted' : orderStatus === 'rejected' ? 'rejected' : 'pending';
+                return {
+                  name,
+                  status,
+                  orderStatus,
+                  isCollected,
+                  itemNum: rest.itemNum,
+                  formType: rest.formType,
+                  installmentAmount: rest.installmentAmount,
+                  totalPrice: rest.totalPrice,
+                  collectionDate: rest.collectionDate,
+                  ...rest,
+                  id: item.myID,
+                };
+              });
+
+              const sortedData = newData.sort((a, b) => {
+                const timestampA = a.timeStamp.seconds;
+                const timestampB = b.timeStamp.seconds;
+                return timestampB - timestampA;
+              });
+
+              setFilteredData(sortedData);
+            }
+            // console.log(`<AdminDepartment: ${adminDepartment} />`)
+          } else {
+            console.log("No such document!");
+          }
+        })
     }
-  }, [value, searchQuery, searchTarget, statusFilter]);
+
+
+  }, [value, user, searchQuery, searchTarget, statusFilter]);
 
 
 
@@ -214,22 +233,22 @@ const OrdersPage = (props) => {
   return (
     <PrivateRoute>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <FormControl sx={{ minWidth: 120, marginRight: '16px' }}>
-  <InputLabel id="status-filter-label">Status</InputLabel>
-  <Select
-    labelId="status-filter-label"
-    id="status-filter"
-    value={statusFilter}
-    onChange={(event) => setStatusFilter(event.target.value)}
-  >
-    <MenuItem value="">All</MenuItem>
-    <MenuItem value="pending">Pending</MenuItem>
-    <MenuItem value="accepted">Accepted</MenuItem>
-    <MenuItem value="rejected">Rejected</MenuItem>
-  </Select>
-</FormControl>
-</Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControl sx={{ minWidth: 120, marginRight: '16px' }}>
+            <InputLabel id="status-filter-label">Status</InputLabel>
+            <Select
+              labelId="status-filter-label"
+              id="status-filter"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="accepted">Accepted</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel id="search-target-label">Search By</InputLabel>
           <Select
@@ -259,42 +278,42 @@ const OrdersPage = (props) => {
           {exporting && <CircularProgress size={20} style={{ marginLeft: '10px' }} />}
         </Button>
       </Box>
-     
 
-    <Card>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Is Collected</TableCell>
-              <TableCell>Item Number</TableCell>
-              <TableCell>Form Type</TableCell>
-              <TableCell>Installment Amount</TableCell>
-              <TableCell>Total Price</TableCell>
-              <TableCell>Collection Date</TableCell>
-              <TableCell>Order Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {currentOrders.map((row) => (
-              <TableRow onClick={() => router.push(`/pages/orders/${row.id}`) } key={row.id}>
-                <TableCell>{row.name}</TableCell>
-                <TableCell>{row.isCollected ? 'Yes' : 'No'}</TableCell>
-                <TableCell>{row.itemNum}</TableCell>
-                <TableCell>{row.formType}</TableCell>
-                <TableCell>{row.installmentAmount}</TableCell>
-                <TableCell>{row.totalPrice}</TableCell>
-                <TableCell>{row.collectionDate}</TableCell>
-                <TableCell>
-                  <Chip label={row.orderStatus} color={statusObj[row.status].color} />
-                </TableCell>
+
+      <Card>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Is Collected</TableCell>
+                <TableCell>Item Number</TableCell>
+                <TableCell>Form Type</TableCell>
+                <TableCell>Installment Amount</TableCell>
+                <TableCell>Total Price</TableCell>
+                <TableCell>Collection Date</TableCell>
+                <TableCell>Order Status</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Card>
+            </TableHead>
+            <TableBody>
+              {currentOrders.map((row) => (
+                <TableRow onClick={() => router.push(`/pages/orders/${row.id}`)} key={row.id}>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.isCollected ? 'Yes' : 'No'}</TableCell>
+                  <TableCell>{row.itemNum}</TableCell>
+                  <TableCell>{row.formType}</TableCell>
+                  <TableCell>{row.installmentAmount}</TableCell>
+                  <TableCell>{row.totalPrice}</TableCell>
+                  <TableCell>{row.collectionDate}</TableCell>
+                  <TableCell>
+                    <Chip label={row.orderStatus} color={statusObj[row.status].color} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
       {/* Pagination component */}
       <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
         <Pagination

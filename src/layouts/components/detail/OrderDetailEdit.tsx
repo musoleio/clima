@@ -1,5 +1,5 @@
 // ** React Imports
-import {forwardRef, useState} from 'react'
+import { forwardRef, useState } from 'react'
 
 // ** MUI Imports
 import Grid from '@mui/material/Grid'
@@ -13,9 +13,9 @@ import FormControl from '@mui/material/FormControl'
 import { useDocument } from "react-firebase-hooks/firestore";
 import { getFirestore, doc, updateDoc } from "firebase/firestore";
 import firebase from '../../../firebase/config'
-import {LocalizationProvider} from "@mui/lab";
+import { LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import {Stack} from "@mui/material";
+import { Stack } from "@mui/material";
 import DatePicker from 'react-datepicker'
 
 // ** Styled Components
@@ -31,7 +31,9 @@ forwardRef((props, ref) => {
   return <TextField inputRef={ref} label='Date' fullWidth {...props} />
 });
 interface State {
-  name: string;
+  // name: string;
+  firstName: string;
+  lastName: string;
   isCollected: boolean;
   itemNum: number;
   formType: string;
@@ -54,7 +56,8 @@ const OrderDetailEdit = (props) => {
 
 
   const [values, setValues] = useState<State>({
-    name: props.value.name,
+    firstName: props.value.firstName,
+    lastName: props.value.lastName,
     isCollected: props.value.isCollected,
     itemNum: props.value.itemNum,
     formType: props.value.formType,
@@ -76,30 +79,32 @@ const OrderDetailEdit = (props) => {
   }
   const [userValue, userLoading, userError] = useDocument(
     props.value && props.value.createdBy ?
-      doc(getFirestore(firebase), 'users', String(props.value.customerID)) :
+      doc(getFirestore(firebase), 'orders', props.value.orderId) :
       null,
     {
       snapshotListenOptions: { includeMetadataChanges: true },
     }
   );
-  console.log(`The agent createdBy is ${props.value.createdBy}`)
 
   const handleUpdate = async () => {
     if (userValue) {
       try {
         const updatedValues = {
-          title: values.title || props.value.title,
           firstName: values.firstName || props.value.firstName,
           lastName: values.lastName || props.value.lastName,
-          nrc: values.nrc || props.value.nrc,
-          employeeNumber: values.employeeNumber || props.value.employeeNumber,
-          primaryPhoneNumber: values.primaryPhoneNumber || props.value.primaryPhoneNumber,
-          secondaryPhoneNumber: values.secondaryPhoneNumber || props.value.secondaryPhoneNumber,
-          district: values.district || props.value.district,
-          department: values.department || props.value.department,
-          institution: values.institution || props.value.institution,
-          createdBy:  props.value.createdBy,
-          createdOn: values.createdOn || props.value.createdOn,
+          isCollected: values.isCollected || props.value.isCollected,
+          itemNum: values.itemNum || props.value.itemNum,
+          formType: values.formType || props.value.formType,
+          installmentAmount: values.installmentAmount || props.value.installmentAmount,
+          totalPrice: values.totalPrice || props.value.totalPrice,
+          collectionDate: values.collectionDate || props.value.collectionDate,
+          accountNumber: values.accountNumber || props.value.accountNumber,
+          branchName: values.branchName || props.value.branchName,
+          comment: values.comment || props.value.comment,
+          bankName: values.bankName || props.value.bankName,
+          accountName: values.accountName || props.value.accountName,
+          monthOfFirstDeduct: values.monthOfFirstDeduct || props.value.monthOfFirstDeduct,
+          monthOfLastDeduct: values.monthOfLastDeduct || props.value.monthOfLastDeduct,
         };
 
         await updateDoc(userValue.ref, updatedValues);
@@ -193,13 +198,23 @@ const OrderDetailEdit = (props) => {
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <InputLabel>Name</InputLabel>
+            <InputLabel>First name</InputLabel>
             <TextField
               fullWidth
-              value={values.name}
-              onChange={handleChange('name')}
-              placeholder='Name'
-              defaultValue={props.value.name}
+              value={values.firstName}
+              onChange={handleChange('firstName')}
+              placeholder='First Name'
+              defaultValue={props.value.firstName}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <InputLabel>Last name</InputLabel>
+            <TextField
+              fullWidth
+              value={values.lastName}
+              onChange={handleChange('lastName')}
+              placeholder='Last Name'
+              defaultValue={props.value.lastName}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -266,7 +281,6 @@ const OrderDetailEdit = (props) => {
             <InputLabel>Account Number</InputLabel>
             <TextField
               fullWidth
-              label={props.value.accountNumber}
               value={values.accountNumber}
               onChange={handleChange('accountNumber')}
               placeholder='Account Number'
@@ -277,7 +291,6 @@ const OrderDetailEdit = (props) => {
             <InputLabel>Branch Name</InputLabel>
             <TextField
               fullWidth
-              label={props.value.branchName}
               value={values.branchName}
               onChange={handleChange('branchName')}
               placeholder='Branch Name'
@@ -288,7 +301,7 @@ const OrderDetailEdit = (props) => {
 
 
 
-          <Grid onClick={() => { handleUpdate() }}  item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Grid onClick={() => { handleUpdate() }} item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Button variant='contained' sx={{ marginRight: 3.5 }}>
               Save Changes
             </Button>
