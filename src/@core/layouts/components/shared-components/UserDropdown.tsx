@@ -16,12 +16,17 @@ import Typography from '@mui/material/Typography'
 
 // ** Icons Imports
 import CogOutline from 'mdi-material-ui/CogOutline'
+import Logout from 'mdi-material-ui/Logout'
 import CurrencyUsd from 'mdi-material-ui/CurrencyUsd'
 import EmailOutline from 'mdi-material-ui/EmailOutline'
 import LogoutVariant from 'mdi-material-ui/LogoutVariant'
 import AccountOutline from 'mdi-material-ui/AccountOutline'
 import MessageOutline from 'mdi-material-ui/MessageOutline'
 import HelpCircleOutline from 'mdi-material-ui/HelpCircleOutline'
+import Button from '@mui/material/Button'
+import { useAuth } from 'src/configs/auth'
+import { getAuth } from 'firebase/auth'
+import firebase from 'src/firebase/config'
 
 // ** Styled Components
 const BadgeContentSpan = styled('span')(({ theme }) => ({
@@ -48,6 +53,11 @@ const UserDropdown = () => {
       router.push(url)
     }
     setAnchorEl(null)
+  }
+
+  const handleLogOut = async () => {
+    const auth = getAuth(firebase)
+    await auth.signOut()
   }
 
   const styles = {
@@ -112,9 +122,13 @@ const UserDropdown = () => {
             Profile
           </Box>
         </MenuItem>
-
-
-
+        <Divider sx={{ mt: 0, mb: 1 }} />
+        <MenuItem sx={{ p: 0 }} onClick={() => handleDropdownClose()}>
+          <Box onClick={handleLogOut} sx={styles}>
+            <Logout sx={{ marginRight: 2 }} />
+            Log Out
+          </Box>
+        </MenuItem>
       </Menu>
     </Fragment>
   )
