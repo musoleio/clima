@@ -1,31 +1,24 @@
 // ** React Imports
-import { useState, SyntheticEvent, Fragment } from 'react'
+import { Fragment, SyntheticEvent, useState } from 'react'
 
 // ** Next Import
 import { useRouter } from 'next/router'
 
 // ** MUI Imports
-import Box from '@mui/material/Box'
-import Menu from '@mui/material/Menu'
-import Badge from '@mui/material/Badge'
 import Avatar from '@mui/material/Avatar'
+import Badge from '@mui/material/Badge'
+import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
+import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
+import { styled } from '@mui/material/styles'
 
 // ** Icons Imports
-import CogOutline from 'mdi-material-ui/CogOutline'
-import Logout from 'mdi-material-ui/Logout'
-import CurrencyUsd from 'mdi-material-ui/CurrencyUsd'
-import EmailOutline from 'mdi-material-ui/EmailOutline'
-import LogoutVariant from 'mdi-material-ui/LogoutVariant'
-import AccountOutline from 'mdi-material-ui/AccountOutline'
-import MessageOutline from 'mdi-material-ui/MessageOutline'
-import HelpCircleOutline from 'mdi-material-ui/HelpCircleOutline'
-import Button from '@mui/material/Button'
-import { useAuth } from 'src/configs/auth'
 import { getAuth } from 'firebase/auth'
+import AccountOutline from 'mdi-material-ui/AccountOutline'
+import Logout from 'mdi-material-ui/Logout'
+import { useAuth } from 'src/configs/auth'
 import firebase from 'src/firebase/config'
 
 // ** Styled Components
@@ -40,6 +33,7 @@ const BadgeContentSpan = styled('span')(({ theme }) => ({
 const UserDropdown = () => {
   // ** States
   const [anchorEl, setAnchorEl] = useState<Element | null>(null)
+  const {user} = useAuth()
 
   // ** Hooks
   const router = useRouter()
@@ -58,6 +52,7 @@ const UserDropdown = () => {
   const handleLogOut = async () => {
     const auth = getAuth(firebase)
     await auth.signOut()
+    router.push('/pages/login');
   }
 
   const styles = {
@@ -108,7 +103,9 @@ const UserDropdown = () => {
               <Avatar alt='John Doe' src='/images/avatars/1.png' sx={{ width: '2.5rem', height: '2.5rem' }} />
             </Badge>
             <Box sx={{ display: 'flex', marginLeft: 3, alignItems: 'flex-start', flexDirection: 'column' }}>
-              <Typography sx={{ fontWeight: 600 }}>Climate Admin</Typography>
+              <Typography sx={{ fontWeight: 600 }}>
+                {user && user.displayName}
+              </Typography>
               <Typography variant='body2' sx={{ fontSize: '0.8rem', color: 'text.disabled' }}>
                 Admin
               </Typography>
