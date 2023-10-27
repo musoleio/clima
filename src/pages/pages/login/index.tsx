@@ -1,44 +1,44 @@
 // ** React Imports
-import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react'
+import { ChangeEvent, MouseEvent, ReactNode, useState } from 'react';
 
 // ** Next Imports
-import Link from 'next/link'
-import { useRouter } from 'next/router'
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 // ** MUI Components
-import { Alert } from '@mui/material'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import MuiCard, { CardProps } from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Checkbox from '@mui/material/Checkbox'
-import FormControl from '@mui/material/FormControl'
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import InputLabel from '@mui/material/InputLabel'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import { styled, useTheme } from '@mui/material/styles'
+import { Alert } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import MuiCard, { CardProps } from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Checkbox from '@mui/material/Checkbox';
+import FormControl from '@mui/material/FormControl';
+import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import InputLabel from '@mui/material/InputLabel';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { styled, useTheme } from '@mui/material/styles';
 
 // ** Icons Imports
-import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
-import EyeOutline from 'mdi-material-ui/EyeOutline'
+import EyeOffOutline from 'mdi-material-ui/EyeOffOutline';
+import EyeOutline from 'mdi-material-ui/EyeOutline';
 
 // ** Configs
-import themeConfig from 'src/configs/themeConfig'
+import themeConfig from 'src/configs/themeConfig';
 
 // ** Layout Import
-import BlankLayout from 'src/@core/layouts/BlankLayout'
+import BlankLayout from 'src/@core/layouts/BlankLayout';
 
 // ** Demo Imports
-import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
+import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
 
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
-import { collection, getFirestore } from "firebase/firestore"
-import { useCollection } from "react-firebase-hooks/firestore"
-import firebase from '../../../firebase/config'
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { collection, getFirestore } from "firebase/firestore";
+import { useCollection } from "react-firebase-hooks/firestore";
+import firebase from '../../../firebase/config';
 
 
 interface State {
@@ -51,20 +51,20 @@ interface State {
 // ** Styled Components
 const Card = styled(MuiCard)<CardProps>(({ theme }) => ({
   [theme.breakpoints.up('sm')]: { width: '28rem' }
-}))
+}));
 
 const LinkStyled = styled('a')(({ theme }) => ({
   fontSize: '0.875rem',
   textDecoration: 'none',
   color: theme.palette.primary.main
-}))
+}));
 
 const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ theme }) => ({
   '& .MuiFormControlLabel-label': {
     fontSize: '0.875rem',
     color: theme.palette.text.secondary
   }
-}))
+}));
 
 const LoginPage = () => {
   // ** State
@@ -73,29 +73,29 @@ const LoginPage = () => {
     email: '',
     showPassword: false,
     department: '',
-  })
+  });
   const [loginError, setLoginError] = useState('');
-  const auth = getAuth(firebase)
+  const auth = getAuth(firebase);
   const [admins, loading, error] = useCollection(
     collection(getFirestore(firebase), 'admins')
   );
 
 
   // ** Hook
-  const theme = useTheme()
-  const router = useRouter()
+  const theme = useTheme();
+  const router = useRouter();
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value })
-  }
+    setValues({ ...values, [prop]: event.target.value });
+  };
 
   const handleClickShowPassword = () => {
-    setValues({ ...values, showPassword: !values.showPassword })
-  }
+    setValues({ ...values, showPassword: !values.showPassword });
+  };
 
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
   const handleLogin = async (values) => {
     try {
       // Check if the provided email exists in the `admins` collection
@@ -103,7 +103,7 @@ const LoginPage = () => {
         ((doc) => doc.data().email === values.email);
       if (!isAdmin) {
         // If the email does not exist in the `admins` collection, the user is not an admin
-        setLoginError(`You are not an admin`)
+        setLoginError(`You are not an admin`);
       }
 
       // If the email exists in the `admins` collection, sign in the user
@@ -111,12 +111,11 @@ const LoginPage = () => {
       if (data && isAdmin) {
         const token = await data.user.getIdToken();
         localStorage.setItem('authToken', token);
-        console.log(`Login token: ${token}`);
         router.push('/');
       }
     } catch (err) {
       console.log(`Error: ${err}`);
-      setLoginError(`Invalid email or password`)
+      setLoginError(`Invalid email or password`);
     }
   };
 
@@ -285,9 +284,9 @@ const LoginPage = () => {
       </Card>
       <FooterIllustrationsV1 />
     </Box>
-  )
-}
+  );
+};
 
-LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>
+LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>;
 
-export default LoginPage
+export default LoginPage;

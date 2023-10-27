@@ -1,8 +1,8 @@
 // AuthProvider.js
-import React, { createContext, useContext } from 'react';
-import firebase from '../firebase/config';
-import { useAuthState } from 'react-firebase-hooks/auth';
 import { getAuth } from 'firebase/auth';
+import { createContext, useContext } from 'react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import firebase from '../firebase/config';
 
 const AuthContext = createContext({
   user: null,
@@ -13,9 +13,7 @@ const AuthContext = createContext({
 export const AuthProvider = ({ children }) => {
   const auth = getAuth(firebase);
   const [user, loading, error] = useAuthState(auth);
-
-  console.log(`From authContex: ${JSON.stringify(user)}`);
-
+  
   return (
     <AuthContext.Provider value={{ user, loading, error }}>
       {children}

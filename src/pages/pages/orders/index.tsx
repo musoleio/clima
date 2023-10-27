@@ -1,35 +1,32 @@
-
-
-// ** MUI Imports
-import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import Chip from '@mui/material/Chip'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 
 // ** Types Imports
-import { ThemeColor } from 'src/@core/layouts/types'
+import { ThemeColor } from 'src/@core/layouts/types';
 
-import { Pagination } from "@mui/lab"
-import { CircularProgress } from "@mui/material"
-import Button from "@mui/material/Button"
-import FormControl from "@mui/material/FormControl"
-import InputLabel from "@mui/material/InputLabel"
-import MenuItem from "@mui/material/MenuItem"
-import Select from "@mui/material/Select"
-import TextField from "@mui/material/TextField"
-import { collection, doc, getDoc, getFirestore } from 'firebase/firestore'
-import { useRouter } from "next/router"
-import { useEffect, useState } from "react"
-import { useCollection } from 'react-firebase-hooks/firestore'
-import { useAuth } from 'src/configs/auth'
-import exportDataToExcel from "../../../configs/exportToExcel"
-import firebase from '../../../firebase/config'
-import PrivateRoute from "../../privateRoute"
+import { Pagination } from "@mui/lab";
+import { CircularProgress } from "@mui/material";
+import Button from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
+import exportDataToExcel from "../../../configs/exportToExcel";
+import firebase from '../../../firebase/config';
+import PrivateRoute from "../../privateRoute";
+import { Order } from '../acceptedorders';
 
 interface StatusObj {
   [key: string]: {
@@ -40,97 +37,61 @@ const statusObj: StatusObj = {
   pending: { color: 'info' },
   rejected: { color: 'error' },
   accepted: { color: 'success' }
-}
+};
+
+const OrderRow = ({ order, router }) => {
+  return (
+    <>
+      <TableRow onClick={() => router.push(`/pages/orders/${order.id}`)} key={order.id}>
+        <TableCell>{`${order.firstName} ${order.lastName}`}</TableCell>
+        <TableCell>{order.isCollected ? 'Yes' : 'No'}</TableCell>
+        <TableCell>{order.itemNum}</TableCell>
+        <TableCell>{order.formType}</TableCell>
+        <TableCell>{order.installmentAmount}</TableCell>
+        <TableCell>{order.totalPrice}</TableCell>
+        <TableCell>{order.collectionDate}</TableCell>
+        <TableCell>
+          <Chip label={order.orderStatus} color={statusObj[order.orderStatus].color} />
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
 
 const OrdersPage = (props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10;
-  const router = useRouter()
-  const [searchTarget, setSearchTarget] = useState('nrc');
+  const router = useRouter();
+  const [searchBy, setSearchBy] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(''); // Initialize with an empty string
-  const [filteredData, setFilteredData] = useState([]);
-  const { user, isAuthLoading, authError } = useAuth();
+  const [statusFilter, setStatusFilter] = useState('');
+  const [filteredData, setFilteredData] = useState<Order[]>([]);
+  const [orders, isLoadingOrders, errorLoadingOrders] = useFetchOrders();
 
-  const [value, loading, error] = useCollection(
-    collection(getFirestore(firebase), 'orders')
-  );
+  console.log(orders);
 
   useEffect(() => {
-    let adminDepartment;
-    if (user) {
-      const adminDocRef = doc(getFirestore(firebase), 'admins', user.uid);
-      getDoc(adminDocRef)
-        .then(doc => {
-          if (doc.exists()) {
-            adminDepartment = doc.data().department
-            if (value) {
-              const data = value.docs
-                .filter((doc) => doc.data().formType === adminDepartment)
-                .map((doc) => {
-                  return {
-                    myID: doc.id,
-                    ...doc.data(),
-                  };
-                });
-
-              const filtered = data.filter((item) => {
-                const { myID, ...rest } = item;
-                const statusMatches = statusFilter === "" || rest.orderStatus.toLowerCase() === statusFilter.toLowerCase();
-                const queryMatches = searchQuery === "" || rest[searchTarget].toLowerCase().includes(searchQuery.toLowerCase());
-                return statusMatches && queryMatches;
-              });
-
-              const newData = filtered.map((item) => {
-                console.log(`Item ID is ${item.myID}`);
-                const { firstName, lastName, orderStatus, isCollected, ...rest } = item;
-                const name = `${firstName} ${lastName}`;
-                const status = orderStatus === 'accepted' ? 'accepted' : orderStatus === 'rejected' ? 'rejected' : 'pending';
-                return {
-                  name,
-                  status,
-                  orderStatus,
-                  isCollected,
-                  itemNum: rest.itemNum,
-                  formType: rest.formType,
-                  installmentAmount: rest.installmentAmount,
-                  totalPrice: rest.totalPrice,
-                  collectionDate: rest.collectionDate,
-                  ...rest,
-                  id: item.myID,
-                };
-              });
-
-              const sortedData = newData.sort((a, b) => {
-                const timestampA = a.timeStamp.seconds;
-                const timestampB = b.timeStamp.seconds;
-                return timestampB - timestampA;
-              });
-
-              setFilteredData(sortedData);
-            }
-            // console.log(`<AdminDepartment: ${adminDepartment} />`)
-          } else {
-            console.log("No such document!");
-          }
-        })
+    if (orders) {
+      let filtered = orders;
+      if (statusFilter || searchQuery) {
+        filtered = orders
+          .filter((order) => {
+            const matcheStatusFilter = !statusFilter || statusFilter === (order.orderStatus);
+            const matchesSearchBy = !searchBy || order[searchBy].startsWith(searchQuery.trim());
+            return matcheStatusFilter && matchesSearchBy;
+          });
+      }
+      filtered.sort((a, b) => b.timeStamp.seconds - a.timeStamp.seconds);
+      setFilteredData(filtered);
     }
+  }, [orders, searchQuery, searchBy, statusFilter]);
 
-
-  }, [value, user, searchQuery, searchTarget, statusFilter]);
-
-
-
-
-  console.log(`Filtered data is: ${JSON.stringify(filteredData)}`)
   const handleChangeSearchTarget = (event) => {
-    console.log(`search target value: ${event.target.value}`)
-    setSearchTarget(event.target.value);
-    console.log(`search target value after: ${searchTarget}`)
+    setSearchBy(event.target.value);
   };
 
   const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
+    setSearchQuery(event.target.value.toLowerCase());
   };
 
   const indexOfLastOrder = currentPage * ordersPerPage;
@@ -144,13 +105,13 @@ const OrdersPage = (props) => {
   const [exporting, setExporting] = useState(false);
 
   const handleExportClick = async () => {
-    if (value) {
+    if (orders) {
       setExporting(true);
 
       const data = [];
 
       // Iterate through each document in the value array
-      for (const docSnapshot of value.docs) {
+      for (const docSnapshot of orders.docs) {
         const orderData = docSnapshot.data();
 
         // Fetch the user document from the "users" collection using createdBy
@@ -173,62 +134,15 @@ const OrdersPage = (props) => {
     }
   };
 
-
-
-
-
-
-
-
-
-
-  const newData: {
-    id: string;
-    name: string;
-    status: string;
-    orderStatus: any;
-    isCollected: any;
-    itemNum: any;
-    formType: any;
-    installmentAmount: any;
-    totalPrice: any;
-    collectionDate: any;
-  }[] = [];
-
-  value?.forEach((doc) => {
-    const data = doc.data();
-    const { firstName, lastName, orderStatus, isCollected, ...rest } = data;
-    const name = `${firstName} ${lastName}`;
-    const status = orderStatus === 'accepted' ? 'accepted' : 'rejected';
-    newData.push({
-      name,
-      status,
-      orderStatus,
-      isCollected,
-      itemNum: rest.itemNum,
-      formType: rest.formType,
-      installmentAmount: rest.installmentAmount,
-      totalPrice: rest.totalPrice,
-      collectionDate: rest.collectionDate,
-      ...rest,
-      id: doc.id
-    });
-  });
-
-
-
-
-
-  if (loading) {
-    return 'loading...'
+  if (isLoadingOrders) {
+    return 'loading...';
   }
 
-  if (error) {
-    return `Error fetching data: ${error}`
+  if (errorLoadingOrders) {
+    console.error(errorLoadingOrders);
+
+    return `Error here fetching data: ${errorLoadingOrders}`;
   }
-
-
-  //console.log(`Our value is ${JSON.stringify(value)}`)
 
   return (
     <PrivateRoute>
@@ -238,6 +152,7 @@ const OrdersPage = (props) => {
             <InputLabel id="status-filter-label">Status</InputLabel>
             <Select
               labelId="status-filter-label"
+              label="Status"
               id="status-filter"
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
@@ -254,10 +169,11 @@ const OrdersPage = (props) => {
           <Select
             labelId="search-target-label"
             id="search-target"
-            value={searchTarget}
+            value={searchBy}
             label="Search By"
             onChange={handleChangeSearchTarget}
           >
+            <MenuItem value="">None</MenuItem>
             <MenuItem value="nrc">NRC</MenuItem>
             <MenuItem value="collectionDate">Collection Date</MenuItem>
             <MenuItem value="employeeNumber">Employee Number</MenuItem>
@@ -278,8 +194,6 @@ const OrdersPage = (props) => {
           {exporting && <CircularProgress size={20} style={{ marginLeft: '10px' }} />}
         </Button>
       </Box>
-
-
       <Card>
         <TableContainer>
           <Table>
@@ -296,20 +210,7 @@ const OrdersPage = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {currentOrders.map((row) => (
-                <TableRow onClick={() => router.push(`/pages/orders/${row.id}`)} key={row.id}>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.isCollected ? 'Yes' : 'No'}</TableCell>
-                  <TableCell>{row.itemNum}</TableCell>
-                  <TableCell>{row.formType}</TableCell>
-                  <TableCell>{row.installmentAmount}</TableCell>
-                  <TableCell>{row.totalPrice}</TableCell>
-                  <TableCell>{row.collectionDate}</TableCell>
-                  <TableCell>
-                    <Chip label={row.orderStatus} color={statusObj[row.status].color} />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {currentOrders.map((order) => <OrderRow order={order} router={router} key={order.id} />)}
             </TableBody>
           </Table>
         </TableContainer>
@@ -324,7 +225,7 @@ const OrdersPage = (props) => {
         />
       </Box>
     </PrivateRoute>
-  )
-}
+  );
+};
 
-export default OrdersPage
+export default OrdersPage;
