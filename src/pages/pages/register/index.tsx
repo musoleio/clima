@@ -1,49 +1,49 @@
 // ** React Imports
-import { ChangeEvent, Fragment, MouseEvent, ReactNode, useState } from 'react'
+import { ChangeEvent, Fragment, MouseEvent, ReactNode, useState } from 'react';
 
 // ** Next Imports
-import Link from 'next/link'
+import Link from 'next/link';
 
 // ** MUI Components
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import MuiCard, { CardProps } from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Checkbox from '@mui/material/Checkbox'
-import Divider from '@mui/material/Divider'
-import FormControl from '@mui/material/FormControl'
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import InputLabel from '@mui/material/InputLabel'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import { styled, useTheme } from '@mui/material/styles'
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import MuiCard, { CardProps } from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Checkbox from '@mui/material/Checkbox';
+import Divider from '@mui/material/Divider';
+import FormControl from '@mui/material/FormControl';
+import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import InputLabel from '@mui/material/InputLabel';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { styled, useTheme } from '@mui/material/styles';
 
 // ** Icons Imports
-import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
-import EyeOutline from 'mdi-material-ui/EyeOutline'
-import Facebook from 'mdi-material-ui/Facebook'
-import Github from 'mdi-material-ui/Github'
-import Google from 'mdi-material-ui/Google'
-import Twitter from 'mdi-material-ui/Twitter'
+import EyeOffOutline from 'mdi-material-ui/EyeOffOutline';
+import EyeOutline from 'mdi-material-ui/EyeOutline';
+import Facebook from 'mdi-material-ui/Facebook';
+import Github from 'mdi-material-ui/Github';
+import Google from 'mdi-material-ui/Google';
+import Twitter from 'mdi-material-ui/Twitter';
 
 // ** Configs
-import themeConfig from 'src/configs/themeConfig'
+import themeConfig from 'src/configs/themeConfig';
 
 // ** Layout Import
-import BlankLayout from 'src/@core/layouts/BlankLayout'
+import BlankLayout from 'src/@core/layouts/BlankLayout';
 
 // ** Demo Imports
-import MenuItem from '@mui/material/MenuItem'
-import Select from '@mui/material/Select'
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, getFirestore, serverTimestamp, setDoc } from "firebase/firestore"
-import { useRouter } from 'next/router'
-import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth'
-import firebase from 'src/firebase/config'
-import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration'
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import { getAuth, updateProfile } from 'firebase/auth';
+import { collection, doc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { useRouter } from 'next/router';
+import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
+import firebase from 'src/firebase/config';
+import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustration';
 
 
 interface State {
@@ -57,13 +57,13 @@ interface State {
 // ** Styled Components
 const Card = styled(MuiCard)<CardProps>(({ theme }) => ({
   [theme.breakpoints.up('sm')]: { width: '28rem' }
-}))
+}));
 
 const LinkStyled = styled('a')(({ theme }) => ({
   fontSize: '0.875rem',
   textDecoration: 'none',
   color: theme.palette.primary.main
-}))
+}));
 
 const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ theme }) => ({
   marginTop: theme.spacing(1.5),
@@ -72,72 +72,73 @@ const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ t
     fontSize: '0.875rem',
     color: theme.palette.text.secondary
   }
-}))
+}));
 
 const RegisterPage = () => {
   // ** States
-  const auth = getAuth(firebase)
+  const auth = getAuth(firebase);
   const [values, setValues] = useState<State>({
     userName: '',
     email: '',
     department: '',
     password: '',
     showPassword: false
-  })
+  });
 
   const [
     createUserWithEmailAndPassword,
     user,
     loading,
     signUpError
-  ] = useCreateUserWithEmailAndPassword(auth)
+  ] = useCreateUserWithEmailAndPassword(auth);
 
   // ** Hook
-  const theme = useTheme()
-  const router = useRouter()
+  const theme = useTheme();
+  const router = useRouter();
 
 
   const handleChange = (prop: keyof State) => (event: ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value })
-  }
+    setValues({ ...values, [prop]: event.target.value });
+  };
   const handleClickShowPassword = () => {
-    setValues({ ...values, showPassword: !values.showPassword })
-  }
+    setValues({ ...values, showPassword: !values.showPassword });
+  };
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
 
   const handleSignUp = async (values) => {
     try {
       const adminUser = await createUserWithEmailAndPassword(values.email, values.password);
 
       if (adminUser) {
+        await updateProfile(adminUser.user, {
+          displayName: values.userName,
+        });
+        adminUser.user;
+
+        // query(getDocs(collection(getFirestore(firebase), 'orders')), where('formType', '==', 'blue'))
+        const data = await getDocs(query(collection(getFirestore(firebase), 'orders'), where('formType', '==', 'blue')));
+      
+        data.docs.map(doc => {
+          doc.data();
+        });
+        
         const userInfo = {
           name: values.userName,
           email: values.email,
           department: values.department,
           dateJoined: serverTimestamp()
         };
-        // const adminsRef = collection(getFirestore(firebase), 'admins');
-        // await addDoc(adminsRef, { userName, email, department, dateJoined: serverTimestamp() });
-
         await setDoc(doc(getFirestore(firebase), 'admins', adminUser.user.uid), userInfo);
-
-        const data = await signInWithEmailAndPassword(auth, values.email, values.password);
-        if (data) {
-          const token = await data.user.getIdToken();
-          localStorage.setItem('authToken', token);
-          console.log(`Login token: ${token}`);
-
-          router.push('/');
-        }
+        router.push('/');
       }
     } catch (error) {
       console.error(`Encountered an error: ${signUpError}`);
       console.error(error);
     }
 
-  }
+  };
 
   return (
     <Box className='content-center'>
@@ -335,9 +336,9 @@ const RegisterPage = () => {
       </Card>
       <FooterIllustrationsV1 />
     </Box>
-  )
-}
+  );
+};
 
-RegisterPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>
+RegisterPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>;
 
-export default RegisterPage
+export default RegisterPage;

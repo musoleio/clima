@@ -1,34 +1,34 @@
 // ** React Imports
-import { forwardRef, useState } from 'react'
+import { forwardRef, useState } from 'react';
 
 // ** MUI Imports
-import Grid from '@mui/material/Grid'
-import Select from '@mui/material/Select'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import TextField from '@mui/material/TextField'
-import InputLabel from '@mui/material/InputLabel'
-import CardContent from '@mui/material/CardContent'
-import FormControl from '@mui/material/FormControl'
+import Grid from '@mui/material/Grid';
+import Select from '@mui/material/Select';
+import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import InputLabel from '@mui/material/InputLabel';
+import CardContent from '@mui/material/CardContent';
+import FormControl from '@mui/material/FormControl';
 import { useDocument } from "react-firebase-hooks/firestore";
 import { getFirestore, doc, updateDoc } from "firebase/firestore";
-import firebase from '../../../firebase/config'
+import firebase from '../../../firebase/config';
 import { LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import { Stack } from "@mui/material";
-import DatePicker from 'react-datepicker'
+import DatePicker from 'react-datepicker';
 
 // ** Styled Components
-import DatePickerWrapper from 'src/@core/styles/libs/react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import DatePickerWrapper from 'src/@core/styles/libs/react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 
 const CustomInput = forwardRef((props, ref) => {
-  return <TextField inputRef={ref} fullWidth {...props} />
-})
+  return <TextField inputRef={ref} fullWidth {...props} />;
+});
 
 forwardRef((props, ref) => {
-  return <TextField inputRef={ref} label='Date' fullWidth {...props} />
+  return <TextField inputRef={ref} label='Date' fullWidth {...props} />;
 });
 interface State {
   // name: string;
@@ -50,10 +50,9 @@ interface State {
 }
 
 const OrderDetailEdit = (props) => {
-  const [collectDate, setCollectDate] = useState<Date | null | undefined>(null)
-  const [firstDeductDate, setFirstDeductDate] = useState<Date | null | undefined>(null)
-  const [lastDeductDate, setLastDeductDate] = useState<Date | null | undefined>(null)
-
+  const [collectDate, setCollectDate] = useState<Date | null | undefined>(null);
+  const [firstDeductDate, setFirstDeductDate] = useState<Date | null | undefined>(null);
+  const [lastDeductDate, setLastDeductDate] = useState<Date | null | undefined>(null);
 
   const [values, setValues] = useState<State>({
     firstName: props.value.firstName,
@@ -75,8 +74,9 @@ const OrderDetailEdit = (props) => {
 
 
   const handleChange = (prop: keyof State) => (event: any) => {
-    setValues({ ...values, [prop]: event.target.value })
-  }
+    Object.assign({}, values, { [prop]: event.target.value });
+    setValues({ ...values, [prop]: event.target.value });
+  };
   const [userValue, userLoading, userError] = useDocument(
     props.value && props.value.createdBy ?
       doc(getFirestore(firebase), 'orders', props.value.orderId) :
@@ -301,7 +301,7 @@ const OrderDetailEdit = (props) => {
 
 
 
-          <Grid onClick={() => { handleUpdate() }} item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Grid onClick={() => { handleUpdate(); }} item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Button variant='contained' sx={{ marginRight: 3.5 }}>
               Save Changes
             </Button>
@@ -309,7 +309,7 @@ const OrderDetailEdit = (props) => {
         </Grid>
       </form>
     </CardContent>
-  )
-}
+  );
+};
 
-export default OrderDetailEdit
+export default OrderDetailEdit;

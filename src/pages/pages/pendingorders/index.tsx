@@ -1,24 +1,23 @@
 // ** MUI Imports
-import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import Chip from '@mui/material/Chip'
-import Table from '@mui/material/Table'
-import TableRow from '@mui/material/TableRow'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import Typography from '@mui/material/Typography'
-import TableContainer from '@mui/material/TableContainer'
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 
 
 // ** Types Imports
-import { ThemeColor } from 'src/@core/layouts/types'
+import { ThemeColor } from 'src/@core/layouts/types';
 
-import { getFirestore, collection , query, where} from 'firebase/firestore';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import firebase from '../../../firebase/config'
+import { where } from 'firebase/firestore';
+import { useRouter } from "next/router";
+import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
 import PrivateRoute from "../../privateRoute";
-import {useRouter} from "next/router";
 
 interface StatusObj {
   [key: string]: {
@@ -29,105 +28,69 @@ const statusObj: StatusObj = {
   pending: { color: 'info' },
   rejected: { color: 'error' },
   accepted: { color: 'success' }
-}
+};
 
 const PendingOrdersPage = () => {
-  const [value, loading, error] = useCollection(
-    query(
-      collection(getFirestore(firebase), 'orders'),
-      where('orderStatus', 'not-in', ['accepted', 'rejected'])
-    )
+  const router = useRouter();
+  const [pendingOrders, isLoadingOrders, errorLodingOrders] = useFetchOrders(
+    where('orderStatus', '==', 'pending')
   );
 
-  const newData: { id: string,name: string; status: string; orderStatus: any; isCollected: any; itemNum: any; formType: any; installmentAmount: any; totalPrice: any; collectionDate: any }[] = [];
-
-  value?.forEach((doc) => {
-    console.log(`orderStatus is ${doc.orderStatus}`)
-    const data = doc.data();
-    const { firstName, lastName, orderStatus, isCollected, ...rest } = data;
-    const name = `${firstName} ${lastName}`;
-    let status;
-    if (orderStatus === 'accepted') {
-      status = 'accepted';
-    } else if (orderStatus === 'rejected') {
-      status = 'rejected';
-    } else {
-      status = 'pending';
-    }
-
-
-    newData.push({ name, status, orderStatus, isCollected, itemNum: rest.itemNum, formType:
-      rest.formType, installmentAmount: rest.installmentAmount,
-      totalPrice: rest.totalPrice, collectionDate: rest.collectionDate, ...rest , id:doc.id});
-  });
-
-
-
-  const latestData = newData
-
-
-
-
-
-  if (loading) {
-    return 'loading...'
+  if (isLoadingOrders) {
+    return 'loading...';
   }
 
-  if (error) {
-    return `Error fetching data: ${error}`
+  if (errorLodingOrders) {
+    return `Error fetching data: ${errorLodingOrders}`;
   }
-
-  const router = useRouter()
-
-  //console.log(`Our value is ${JSON.stringify(value)}`)
 
   return (
     <PrivateRoute>
-    <Card>
-      <TableContainer>
-        <Table sx={{ minWidth: 800 }} aria-label='table in dashboard'>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Number Of Items</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Form Type</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {latestData.map((row) => (
-              <TableRow onClick={() => router.push(`/pages/orders/${row.id}`) } hover key={row.name} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
-                <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{row.name}</Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>{row.itemNum}</TableCell>
-                <TableCell>{row.collectionDate}</TableCell>
-                <TableCell>{row.totalPrice}</TableCell>
-                <TableCell>{row.formType}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={row.status}
-                    color={statusObj[row.status].color}
-                    sx={{
-                      height: 24,
-                      fontSize: '0.75rem',
-                      textTransform: 'capitalize',
-                      '& .MuiChip-label': { fontWeight: 500 }
-                    }}
-                  />
-                </TableCell>
+      <Card>
+        <TableContainer>
+          <Table sx={{ minWidth: 800 }} aria-label='table in dashboard'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Number Of Items</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Form Type</TableCell>
+                <TableCell>Status</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Card>
+            </TableHead>
+            <TableBody>
+              {pendingOrders.map((order) => (
+                <TableRow onClick={() => router.push(`/pages/orders/${order.id}`)} hover key={order.id} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
+                  <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{order.firstName} {order.lastName}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>{order.itemNum}</TableCell>
+                  <TableCell>{order.collectionDate}</TableCell>
+                  <TableCell>{order.totalPrice}</TableCell>
+                  <TableCell>{order.formType}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={order.orderStatus}
+                      color={statusObj[order.orderStatus].color}
+                      sx={{
+                        height: 24,
+                        fontSize: '0.75rem',
+                        textTransform: 'capitalize',
+                        '& .MuiChip-label': { fontWeight: 500 }
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
     </PrivateRoute>
-  )
-}
+  );
+};
 
-export default PendingOrdersPage
+export default PendingOrdersPage;

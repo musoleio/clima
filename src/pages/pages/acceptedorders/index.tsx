@@ -3,22 +3,22 @@ import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
 import Table from '@mui/material/Table'
-import TableRow from '@mui/material/TableRow'
-import TableHead from '@mui/material/TableHead'
+
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
-import Typography from '@mui/material/Typography'
 import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import Typography from '@mui/material/Typography'
 
 
 // ** Types Imports
 import { ThemeColor } from 'src/@core/layouts/types'
 
-import { getFirestore, collection , query, where, orderBy} from 'firebase/firestore';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import firebase from '../../../firebase/config'
-import PrivateRoute from "../../privateRoute";
-import {useRouter} from "next/router";
+import { where } from 'firebase/firestore'
+import { useRouter } from "next/router"
+import { useFetchOrders } from 'src/@core/hooks/useFetchOrders'
+import PrivateRoute from "../../privateRoute"
 
 interface RowType {
   name: string
@@ -29,15 +29,31 @@ interface RowType {
   isCollected: boolean
 }
 
+export type Order = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  isCollected: boolean;
+  itemNum: number;
+  formType: string;
+  installmentAmount: string;
+  totalPrice: string;
+  collectionDate: Date | null;
+  accountNumber: string;
+  branchName: string;
+  comment: string;
+  bankName: string;
+  orderStatus: string;
+  accountName: string;
+  monthOfLastDeduct: Date | null;
+  monthOfFirstDeduct: Date | null;
+}
+
 interface StatusObj {
   [key: string]: {
     color: ThemeColor
   }
 }
-
-const rows: RowType[] = [
-
-]
 
 const statusObj: StatusObj = {
   applied: { color: 'info' },
@@ -46,114 +62,60 @@ const statusObj: StatusObj = {
 }
 
 const AcceptedOrdersPage = () => {
-  const [value, loading, error] = useCollection(
-    query(
-      collection(getFirestore(firebase), 'orders'),
-      where('orderStatus', '==', 'accepted'),
-      orderBy('timeStamp', 'desc')
-    )
-  );
-
-  const newData: { id: string; name: string; status: string; orderStatus: any; isCollected: any; itemNum: any; formType: any; installmentAmount: any; totalPrice: any; collectionDate: any }[] = [];
-
-  value?.forEach((doc) => {
-    const data = doc.data();
-    const { firstName, lastName, orderStatus, isCollected, ...rest } = data;
-    const name = `${firstName} ${lastName}`;
-    const status = orderStatus === 'accepted' ? 'accepted' : orderStatus === 'rejected' ? 'rejected' : 'pending';
-    newData.push({
-      name,
-      status,
-      orderStatus,
-      isCollected,
-      itemNum: rest.itemNum,
-      formType: rest.formType,
-      installmentAmount: rest.installmentAmount,
-      totalPrice: rest.totalPrice,
-      collectionDate: rest.collectionDate,
-      ...rest,
-      id: doc.id // add the id property last
-    });
-
-  });
-
-
-  const latestData = newData.map((d) => {
-    return {
-      id: d.id,
-      name: d.name,
-      status: d.status,
-      orderStatus: d.orderStatus,
-      isCollected: d.isCollected,
-      itemNum: d.itemNum,
-      formType: d.formType,
-      installmentAmount: d.installmentAmount,
-      totalPrice: d.totalPrice,
-      collectionDate: d.collectionDate,
-    }
-  });
-
+  const [orders, isLoadingOrders, errorLoadingOrders] = useFetchOrders(where('orderStatus', '==', 'accepted'));
   const router = useRouter()
 
-
-
-
-  if (loading) {
+  if (isLoadingOrders) {
     return 'loading...'
   }
 
-  if (error) {
-    return `Error fetching data: ${error}`
+  if (errorLoadingOrders) {
+    return `Error fetching data: ${errorLoadingOrders}`
   }
 
-
-  //console.log(`Our value is ${JSON.stringify(value)}`)
-
   return (
-
-    <PrivateRoute><Card>
-      <TableContainer>
-        <Table sx={{ minWidth: 800 }} aria-label='table in dashboard'>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Number Of Items</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Form Type</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {latestData.map((row) => (
-              <TableRow onClick={() => router.push(`/pages/orders/${row.id}`) } hover key={row.name} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
-                <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{row.name}</Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>{row.itemNum}</TableCell>
-                <TableCell>{row.collectionDate}</TableCell>
-                <TableCell>{row.totalPrice}</TableCell>
-                <TableCell>{row.formType}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={row.status}
-                    color={statusObj[row.status].color}
-                    sx={{
-                      height: 24,
-                      fontSize: '0.75rem',
-                      textTransform: 'capitalize',
-                      '& .MuiChip-label': { fontWeight: 500 }
-                    }}
-                  />
-                </TableCell>
+    <PrivateRoute>
+      <Card>
+        <TableContainer>
+          <Table sx={{ minWidth: 800 }} aria-label='table in dashboard'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Number Of Items</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Form Type</TableCell>
+                <TableCell>Status</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Card>
+            </TableHead>
+            <TableBody>
+              {orders.map((order) => (
+                <TableRow onClick={() => router.push(`/pages/orders/${order.id}`)} hover key={order.id} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
+                  <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
+                    <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{`${order.firstName} ${order.lastName}`}</Typography>
+                  </TableCell>
+                  <TableCell>{order.itemNum}</TableCell>
+                  <TableCell>{order.collectionDate}</TableCell>
+                  <TableCell>{order.totalPrice}</TableCell>
+                  <TableCell>{order.formType}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={order.orderStatus}
+                      color={statusObj[order.orderStatus].color}
+                      sx={{
+                        height: 24,
+                        fontSize: '0.75rem',
+                        textTransform: 'capitalize',
+                        '& .MuiChip-label': { fontWeight: 500 }
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
     </PrivateRoute>
   )
 }

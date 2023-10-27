@@ -1,28 +1,29 @@
 // ** React Imports
-import {ReactElement, useState} from 'react'
+import { ReactElement, useState } from 'react';
 
 // ** MUI Imports
-import Box from '@mui/material/Box'
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import Avatar from '@mui/material/Avatar'
-import CardHeader from '@mui/material/CardHeader'
-import IconButton from '@mui/material/IconButton'
-import Typography from '@mui/material/Typography'
-import CardContent from '@mui/material/CardContent'
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import Avatar from '@mui/material/Avatar';
+import CardHeader from '@mui/material/CardHeader';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
 
 // ** Icons Imports
-import TrendingUp from 'mdi-material-ui/TrendingUp'
-import DotsVertical from 'mdi-material-ui/DotsVertical'
-import AccountOutline from 'mdi-material-ui/AccountOutline'
-import {NaturePeople} from "mdi-material-ui";
+import TrendingUp from 'mdi-material-ui/TrendingUp';
+import DotsVertical from 'mdi-material-ui/DotsVertical';
+import AccountOutline from 'mdi-material-ui/AccountOutline';
+import { NaturePeople } from "mdi-material-ui";
 
 // ** Types
-import { ThemeColor } from 'src/@core/layouts/types'
-import {useCollection} from "react-firebase-hooks/firestore";
-import {collection, getFirestore} from "firebase/firestore";
+import { ThemeColor } from 'src/@core/layouts/types';
+import { useCollection } from "react-firebase-hooks/firestore";
+import { collection, getFirestore } from "firebase/firestore";
 import firebase from "../../firebase/config";
-import {useRouter} from "next/router";
+import { useRouter } from "next/router";
+import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
 
 
 interface DataType {
@@ -38,9 +39,7 @@ const RenderStats = () => {
     collection(getFirestore(firebase), 'users')
   );
 
-  const [ordersValue, ordersLoading, ordersError] = useCollection(
-    collection(getFirestore(firebase), 'orders')
-  );
+  const [ordersValue, ordersLoading, ordersError] = useFetchOrders();
 
   const [customersValue, customersLoading, customersError] = useCollection(
     collection(getFirestore(firebase), 'customers')
@@ -55,7 +54,7 @@ const RenderStats = () => {
       route: '/pages/agents'
     },
     {
-      stats: ordersValue?.size,
+      stats: ordersValue?.length,
       title: 'Orders',
       color: 'success',
       icon: <TrendingUp sx={{ fontSize: '1.75rem' }} />,
@@ -71,7 +70,7 @@ const RenderStats = () => {
     }
   ];
 
-  const router = useRouter()
+  const router = useRouter();
 
   if (usersLoading || ordersLoading || customersLoading) {
     return 'Loading...';
@@ -80,13 +79,6 @@ const RenderStats = () => {
   if (usersError || ordersError || customersError) {
     return `Error: ${usersError?.message || ordersError?.message || customersError?.message}`;
   }
-
-
-  // usersValue?.forEach((doc) => {
-  //   const data = doc.data();
-  //   console.log(data);
-  // });
-
 
   return statsData.map((item: DataType, index: number) => (
     <Grid item xs={12} sm={3} key={index}>
@@ -110,8 +102,8 @@ const RenderStats = () => {
         </Box>
       </Box>
     </Grid>
-  ))
-}
+  ));
+};
 
 const StatisticsCard = () => {
 
@@ -124,15 +116,6 @@ const StatisticsCard = () => {
             <DotsVertical />
           </IconButton>
         }
-
-        // subheader={
-        //   <Typography variant='body2'>
-        //     <Box component='span' sx={{ fontWeight: 600, color: 'text.primary' }}>
-        //       Total 48.5% growth
-        //     </Box>{' '}
-        //     😎 this month
-        //   </Typography>
-        // }
         titleTypographyProps={{
           sx: {
             mb: 2.5,
@@ -147,7 +130,7 @@ const StatisticsCard = () => {
         </Grid>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default StatisticsCard
+export default StatisticsCard;

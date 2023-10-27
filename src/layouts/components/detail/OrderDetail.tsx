@@ -18,10 +18,7 @@ import { getFirestore, doc, updateDoc } from "firebase/firestore";
 import firebase from '../../../firebase/config'
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import OrderDetailEdit from "./OrderDetailEdit";
-
-
-
-
+import PrivateRoute from 'src/pages/privateRoute';
 
 const DetailOrder = (props) => {
 
@@ -63,8 +60,6 @@ const DetailOrder = (props) => {
     }
   };
 
-
-
   const [isEditing, setIsEditing] = useState(false);
   const handleEdit = () => {
     setIsEditing(true);
@@ -74,163 +69,163 @@ const DetailOrder = (props) => {
   }
 
   return (
-    <CardContent>
-      <div>
-        <Grid container spacing={7}>
-          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
-            {props.value.orderStatus === 'pending' && (
-              <>
+    <PrivateRoute>
+      <CardContent>
+        <div>
+          <Grid container >
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }} marginBottom={8}>
+              {props.value.orderStatus === 'pending' && (
+                <>
+                  <Button onClick={acceptOrder} variant='contained' sx={{ marginRight: 3.5 }}>
+                    Accept Order
+                  </Button>
+                  <Button onClick={rejectOrder} variant='contained' sx={{ marginRight: 3.5 }}>
+                    Reject Order
+                  </Button>
+                </>
+              )}
+              {props.value.orderStatus === 'rejected' && (
                 <Button onClick={acceptOrder} variant='contained' sx={{ marginRight: 3.5 }}>
                   Accept Order
                 </Button>
+              )}
+              {props.value.orderStatus === 'accepted' && (
                 <Button onClick={rejectOrder} variant='contained' sx={{ marginRight: 3.5 }}>
                   Reject Order
                 </Button>
-              </>
-            )}
-            {props.value.orderStatus === 'rejected' && (
-              <Button onClick={acceptOrder} variant='contained' sx={{ marginRight: 3.5 }}>
-                Accept Order
+              )}
+              <Button onClick={handleEdit} variant='contained' sx={{ marginRight: 3.5 }}>
+                Edit Order
               </Button>
-            )}
-            {props.value.orderStatus === 'accepted' && (
-              <Button onClick={rejectOrder} variant='contained' sx={{ marginRight: 3.5 }}>
-                Reject Order
-              </Button>
-            )}
-            <Button onClick={handleEdit} variant='contained' sx={{ marginRight: 3.5 }}>
-              Edit Order
-            </Button>
-          </Grid>
-
-          <Grid container item xs={12} sm={true} spacing={7}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1"> Customer Name:</Typography>
-              <Typography>{props.value.customerName}</Typography>
-              G</Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Total Price:</Typography>
-              <Typography>{`K${props.value.totalPrice}`}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Created By:</Typography>
-              <Typography>{`${props.value.agentName}`}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Account Number:</Typography>
-              <Typography>{`${props.value.accountNumber}`}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Account Name:</Typography>
-              <Typography>{`${props.value.accountName}`}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Installment Amount:</Typography>
-              <Typography>{`K${props.value.installmentAmount}`}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Order Status</Typography>
-              <Typography>{props.value.orderStatus}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Is Order Collected</Typography>
-              <Typography>{props.value.isCollected ? 'Yes' : 'No'}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Reserve Attachment</Typography>
-              <Typography>{props.value.reserveAttachment ? 'Yes' : 'No'}</Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Form Type</Typography>
-              <Typography>{props.value.formType}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Order Comment</Typography>
-              <Typography>{props.value.comment}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Bank Name</Typography>
-              <Typography>{props.value.bankName}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Branch Name</Typography>
-              <Typography>{props.value.branchName}</Typography>
+            <Grid container item xs={12} sm={true} spacing={7}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1"> Customer Name:</Typography>
+                <Typography>{props.value.customerName}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">NRC:</Typography>
+                <Typography>{props.value.nrc}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Employee Number:</Typography>
+                <Typography>{props.value.employeeNumber}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Total Price:</Typography>
+                <Typography>{`K${props.value.totalPrice}`}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Created By:</Typography>
+                <Typography>{`${props.value.agentName}`}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Account Name:</Typography>
+                <Typography>{`${props.value.accountName}`}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Account Number:</Typography>
+                <Typography>{`${props.value.accountNumber}`}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Installment Amount:</Typography>
+                <Typography>{`K${props.value.installmentAmount}`}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Order Status</Typography>
+                <Typography>{props.value.orderStatus}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Is Order Collected</Typography>
+                <Typography>{props.value.isCollected ? 'Yes' : 'No'}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Reserve Attachment</Typography>
+                <Typography>{props.value.reserveAttachment ? 'Yes' : 'No'}</Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Form Type</Typography>
+                <Typography>{props.value.formType}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Order Comment</Typography>
+                <Typography>{props.value.comment}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Bank Name</Typography>
+                <Typography>{props.value.bankName}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Branch Name</Typography>
+                <Typography>{props.value.branchName}</Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Collection Date</Typography>
+                <Typography>{props.value.collectionDate}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Number Of Items</Typography>
+                <Typography>{props.value.itemNum}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Month Of First Deduct</Typography>
+                <Typography>{props.value.monthOfFirstDeduct}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Month Of Last Deduct</Typography>
+                <Typography>{props.value.monthOfLastDeduct}</Typography>
+              </Grid>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Collection Date</Typography>
-              <Typography>{props.value.collectionDate}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Number Of Items</Typography>
-              <Typography>{props.value.itemNum}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Month Of First Deduct</Typography>
-              <Typography>{props.value.monthOfFirstDeduct}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Month Of Last Deduct</Typography>
-              <Typography>{props.value.monthOfLastDeduct}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Employee Number:</Typography>
-              <Typography>{props.value.employeeNumber}</Typography>
-            </Grid>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <TransformWrapper>
-              <TransformComponent>
-                <Grid container spacing={6}>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1">Attachments</Typography>
-                  </Grid>
-                  {props.value.attachments.map((attachment, index) => (
-                    <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
-                      <Card>
-                        <TransformComponent>
-                          <CardMedia
-                            component="img"
-                            image={attachment} // assuming you have an `url` field in your attachment object
-                            alt={`Attachment ${index}`}
-                          />
-                        </TransformComponent>
-                      </Card>
+            <Grid item xs={12} md={6} sm={true}>
+              <TransformWrapper>
+                <TransformComponent>
+                  <Grid container>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1">Attachments</Typography>
                     </Grid>
-                  ))}
-                </Grid>
-              </TransformComponent>
-            </TransformWrapper>
+                    {props.value.attachments.map((attachment, index) => (
+                      <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
+                        <Card>
+                          <TransformComponent>
+                            <CardMedia
+                              component="img"
+                              image={attachment}
+                              alt={`Attachment ${index}`}
+                            />
+                          </TransformComponent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </TransformComponent>
+              </TransformWrapper>
+            </Grid>
           </Grid>
-
-
-        </Grid>
-        <Snackbar
-          open={isSuccessToastOpen}
-          autoHideDuration={6000}
-          onClose={() => setIsSuccessToastOpen(false)}
-        >
-          <Alert severity='success' sx={{ width: '100%' }}>
-            Order accepted successfully!
-          </Alert>
-        </Snackbar>
-        <Snackbar
-          open={isErrorToastOpen}
-          autoHideDuration={6000}
-          onClose={() => setIsErrorToastOpen(false)}
-        >
-          <Alert severity='error' sx={{ width: '100%' }}>
-            Error while rejecting order.
-          </Alert>
-        </Snackbar>
-      </div>
-    </CardContent>
-
-
-
-
+          <Snackbar
+            open={isSuccessToastOpen}
+            autoHideDuration={6000}
+            onClose={() => setIsSuccessToastOpen(false)}
+          >
+            <Alert severity='success' sx={{ width: '100%' }}>
+              Order accepted successfully!
+            </Alert>
+          </Snackbar>
+          <Snackbar
+            open={isErrorToastOpen}
+            autoHideDuration={6000}
+            onClose={() => setIsErrorToastOpen(false)}
+          >
+            <Alert severity='error' sx={{ width: '100%' }}>
+              Error while rejecting order.
+            </Alert>
+          </Snackbar>
+        </div>
+      </CardContent>
+    </PrivateRoute>
   )
 }
 
