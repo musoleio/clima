@@ -16,7 +16,7 @@ import { ThemeColor } from 'src/@core/layouts/types';
 import { Pagination } from "@mui/lab";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
+import { useOrders } from 'src/@core/hooks/useOrders';
 import { Order } from 'src/pages/pages/acceptedorders';
 
 interface RowType {
@@ -49,7 +49,7 @@ const DashboardTable = () => {
   const ordersPerPage = 3;
   const router = useRouter();
   const [sortedOrders, setSortedOrders] = useState<Order[]>([]);
-  const [orders, isLoadingOrders, errorLoadingOrders] = useFetchOrders();
+  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders();
 
   useEffect(() => {
     if (orders) {
