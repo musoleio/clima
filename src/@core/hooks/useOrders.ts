@@ -2,10 +2,9 @@ import { QueryFilterConstraint, Unsubscribe, and, collection, doc, getDoc, getFi
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "src/configs/auth";
 import firebase from "src/firebase/config";
-import { Order } from "src/pages/pages/acceptedorders";
+import { Order } from "../utils/types";
 
-
-export const useFetchOrders = (...queryConstraints: QueryFilterConstraint[]): [Order[], loading: boolean, error: any] => {
+export const useOrders = (...queryConstraints: QueryFilterConstraint[]): [Order[], loading: boolean, error: any] => {
   const { user, loading: isAuthLoading, error: authError } = useAuth();
   const [adminDepartment, setDepart] = useState<string>(null);
   const [orders, setOrders] = useState<Order[]>(null);
@@ -22,8 +21,6 @@ export const useFetchOrders = (...queryConstraints: QueryFilterConstraint[]): [O
   }, []);
 
   const fetchOrders = useCallback(async (adminDepartment: string) => {
-    console.log('fetching orders for ' + adminDepartment);
-    console.log(`constraints: ${queryConstraints}`);
     const filter = and(where('formType', '==', adminDepartment), ...queryConstraints);
     const dbQuery = query(collection(getFirestore(firebase), 'orders',), filter);
     unsubscribe.current = onSnapshot(dbQuery, (querySnapshot) => {
@@ -40,16 +37,13 @@ export const useFetchOrders = (...queryConstraints: QueryFilterConstraint[]): [O
   useEffect(() => {
     try {
       if (user && !adminDepartment) {
-        console.log(`uid: ${user.uid}`);
         fetchAdminDepartment(user.uid);
       }
 
       if (adminDepartment && !orders) {
-        console.log(`dpt: ${adminDepartment}`);
         fetchOrders(adminDepartment);
       }
       if (orders) {
-        console.log(`There are ${orders} accepted orders`);
         setLoading(false);
       }
     } catch (error) {
@@ -60,7 +54,6 @@ export const useFetchOrders = (...queryConstraints: QueryFilterConstraint[]): [O
     return () => {
       if (unsubscribe.current) {
         unsubscribe.current();
-        console.info('%cUnsubscribing to snapshot changes...', 'color: blue; font-family: monospace; font-weight: bold;');
       }
     };
   }, [user, adminDepartment, orders]);

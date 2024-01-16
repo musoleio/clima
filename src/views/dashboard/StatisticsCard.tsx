@@ -23,7 +23,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import { collection, getFirestore } from "firebase/firestore";
 import firebase from "../../firebase/config";
 import { useRouter } from "next/router";
-import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
+import { useOrders } from 'src/@core/hooks/useOrders';
 
 
 interface DataType {
@@ -39,7 +39,7 @@ const RenderStats = () => {
     collection(getFirestore(firebase), 'users')
   );
 
-  const [ordersValue, ordersLoading, ordersError] = useFetchOrders();
+  const [ordersValue, ordersLoading, ordersError] = useOrders();
 
   const [customersValue, customersLoading, customersError] = useCollection(
     collection(getFirestore(firebase), 'customers')

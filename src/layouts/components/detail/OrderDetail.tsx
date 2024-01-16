@@ -1,28 +1,29 @@
 // ** React Imports
-import { useState } from 'react'
+import { useRef, useState } from 'react';
 
 // ** MUI Imports
-import Grid from '@mui/material/Grid'
+import Grid from '@mui/material/Grid';
 
-import Button from '@mui/material/Button'
-
+import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import Typography from "@mui/material/Typography";
+import InputLabel from '@mui/material/InputLabel';
 
-
-import CardContent from "@mui/material/CardContent";
+import { Alert, Box, MenuItem, Snackbar, FormControl } from "@mui/material";
 import Card from "@mui/material/Card";
-import { Snackbar, Alert } from "@mui/material";
+import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
+import { doc, getFirestore, updateDoc } from "firebase/firestore";
 import { useDocument } from "react-firebase-hooks/firestore";
-import { getFirestore, doc, updateDoc } from "firebase/firestore";
-import firebase from '../../../firebase/config'
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
-import OrderDetailEdit from "./OrderDetailEdit";
 import PrivateRoute from 'src/pages/privateRoute';
+import firebase from '../../../firebase/config';
+import OrderDetailEdit from "./OrderDetailEdit";
 
 const DetailOrder = (props) => {
+  const [isStatusToastOpen, setIsStatusToastOpen] = useState(false);
 
-  const [orderValue, orderLoading, orderError] =
+  const [orderDetails, orderLoading, orderError] =
     useDocument(
       props.value && props.value.orderId ?
         doc(getFirestore(firebase), 'orders', String(props.value.orderId)) :
@@ -33,28 +34,11 @@ const DetailOrder = (props) => {
     );
   const [isSuccessToastOpen, setIsSuccessToastOpen] = useState(false);
   const [isErrorToastOpen, setIsErrorToastOpen] = useState(false);
-  const [rejectToastOpen, setRejectToastOpen] = useState(false);
-  const acceptOrder = async () => {
-    try {
-      await updateDoc(orderValue.ref, {
-        orderStatus: 'accepted'
-      })
-      setIsSuccessToastOpen(true);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-  const handleRejectToastClose = () => {
-    setRejectToastOpen(false);
-  };
 
-
-  const rejectOrder = async () => {
+  const updateOrderStatus = async (status: string) => {
     try {
-      await updateDoc(orderValue.ref, {
-        orderStatus: 'rejected'
-      })
-      setRejectToastOpen(true);
+      await updateDoc(orderDetails.ref, { orderStatus: status });
+      setIsStatusToastOpen(true);
     } catch (error) {
       console.error(error);
     }
@@ -64,6 +48,11 @@ const DetailOrder = (props) => {
   const handleEdit = () => {
     setIsEditing(true);
   };
+
+  if (orderLoading) {
+    return 'loading order...';
+  }
+
   if (isEditing) {
     return <OrderDetailEdit {...props} />;
   }
@@ -74,32 +63,46 @@ const DetailOrder = (props) => {
         <div>
           <Grid container >
             <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }} marginBottom={8}>
-              {props.value.orderStatus === 'pending' && (
-                <>
-                  <Button onClick={acceptOrder} variant='contained' sx={{ marginRight: 3.5 }}>
-                    Accept Order
-                  </Button>
-                  <Button onClick={rejectOrder} variant='contained' sx={{ marginRight: 3.5 }}>
-                    Reject Order
-                  </Button>
-                </>
-              )}
-              {props.value.orderStatus === 'rejected' && (
-                <Button onClick={acceptOrder} variant='contained' sx={{ marginRight: 3.5 }}>
-                  Accept Order
-                </Button>
-              )}
-              {props.value.orderStatus === 'accepted' && (
-                <Button onClick={rejectOrder} variant='contained' sx={{ marginRight: 3.5 }}>
-                  Reject Order
-                </Button>
-              )}
+              <FormControl sx={{ marginRight: 3.5 }}>
+                <InputLabel id="order-status-label">Order status</InputLabel>
+                <Select
+                  labelId="order-status-label"
+                  label="Order status"
+                  value={orderDetails?.data().orderStatus}
+                  onChange={async (event) => updateOrderStatus(event.target.value)}
+                >
+                  <MenuItem value="pending" >pending</MenuItem>
+                  <MenuItem value="accepted pending">Accepted Pending</MenuItem>
+                  <MenuItem value="rejected">Rejected</MenuItem>
+                  <MenuItem value="accepted">Accepted</MenuItem>
+                </Select>
+              </FormControl>
+              {/* order status */}
+              <FormControl sx={{ marginRight: 3.5 }}>
+                <InputLabel id="order-category-label">Category</InputLabel>
+                <Select
+                  labelId="order-category-label"
+                  label="Category"
+                  value={orderDetails?.data().category || ''}
+                  onChange={async (event) => {
+                    await updateDoc(orderDetails.ref, { category: event.target.value });
+                  }}
+                >
+                  <MenuItem value="mpower">MPower</MenuItem>
+                  <MenuItem value="climate">Climate</MenuItem>
+                  <MenuItem value="smartbuy">Smartbuy</MenuItem>
+                </Select>
+              </FormControl>
               <Button onClick={handleEdit} variant='contained' sx={{ marginRight: 3.5 }}>
                 Edit Order
               </Button>
             </Grid>
 
             <Grid container item xs={12} sm={true} spacing={7}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Category:</Typography>
+                <Typography>{orderDetails?.data().category}</Typography>
+              </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle1"> Customer Name:</Typography>
                 <Typography>{props.value.customerName}</Typography>
@@ -223,10 +226,18 @@ const DetailOrder = (props) => {
               Error while rejecting order.
             </Alert>
           </Snackbar>
+          <Snackbar
+            open={isStatusToastOpen}
+            autoHideDuration={4000}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            onClose={() => setIsStatusToastOpen(false)}
+          >
+            <Alert severity='success' variant='filled' sx={{ width: '100%' }}>Successfully update order status</Alert>
+          </Snackbar>
         </div>
       </CardContent>
     </PrivateRoute>
-  )
-}
+  );
+};
 
-export default DetailOrder
+export default DetailOrder;

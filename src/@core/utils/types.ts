@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'accepted' | 'rejected';
+export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'accepted pending';
 export type FormType = 'loan' | 'hirePurchase';
 
 export type Order = {
@@ -14,6 +14,7 @@ export type Order = {
   accountNumber: string;
   branchName: string;
   comment: string;
+  category: 'mpower' | 'smartbuy' | 'climate';
   bankName: string;
   orderStatus: OrderStatus
   accountName: string;

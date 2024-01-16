@@ -16,7 +16,7 @@ import { ThemeColor } from 'src/@core/layouts/types';
 
 import { where } from 'firebase/firestore';
 import { useRouter } from "next/router";
-import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
+import { useOrders } from 'src/@core/hooks/useOrders';
 import PrivateRoute from "../../privateRoute";
 
 interface StatusObj {
@@ -32,7 +32,7 @@ const statusObj: StatusObj = {
 
 const PendingOrdersPage = () => {
   const router = useRouter();
-  const [pendingOrders, isLoadingOrders, errorLodingOrders] = useFetchOrders(
+  const [pendingOrders, isLoadingOrders, errorLodingOrders] = useOrders(
     where('orderStatus', '==', 'pending')
   );
 

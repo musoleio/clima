@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
+
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
@@ -19,33 +20,58 @@ import { useRouter } from "next/router";
 import { useOrders } from 'src/@core/hooks/useOrders';
 import PrivateRoute from "../../privateRoute";
 
+interface RowType {
+  name: string
+  date: string
+  numberOfItems: number
+  amount: string
+  status: string
+  isCollected: boolean
+}
+
+export type Order = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  isCollected: boolean;
+  itemNum: number;
+  formType: string;
+  installmentAmount: string;
+  totalPrice: string;
+  collectionDate: Date | null;
+  accountNumber: string;
+  branchName: string;
+  comment: string;
+  bankName: string;
+  orderStatus: string;
+  accountName: string;
+  monthOfLastDeduct: Date | null;
+  monthOfFirstDeduct: Date | null;
+}
+
 interface StatusObj {
   [key: string]: {
     color: ThemeColor
   }
 }
+
 const statusObj: StatusObj = {
   applied: { color: 'info' },
   rejected: { color: 'error' },
   accepted: { color: 'success' }
 };
 
-const RejectedOrdersPage = () => {
+const AcceptedOrdersPage = () => {
+  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders(where('orderStatus', '==', 'accepted pending'));
   const router = useRouter();
-  const [rejectedOrders, isLoadingRejectedOrders, errorLoadingRejectedOrders] = useOrders(
-    where('orderStatus', '==', 'rejected')
-  );
 
-  if (isLoadingRejectedOrders) {
+  if (isLoadingOrders) {
     return 'loading...';
   }
 
-  if (errorLoadingRejectedOrders) {
-    return `Error fetching data: ${errorLoadingRejectedOrders}`;
+  if (errorLoadingOrders) {
+    return `Error fetching data: ${errorLoadingOrders}`;
   }
-
-
-  //console.log(`Our value is ${JSON.stringify(value)}`)
 
   return (
     <PrivateRoute>
@@ -63,12 +89,10 @@ const RejectedOrdersPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rejectedOrders.map((order) => (
+              {orders && orders.map((order) => (
                 <TableRow onClick={() => router.push(`/pages/orders/${order.id}`)} hover key={order.id} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
                   <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{`${order.firstName} ${order.lastName}`}</Typography>
-                    </Box>
+                    <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{`${order.firstName} ${order.lastName}`}</Typography>
                   </TableCell>
                   <TableCell>{order.itemNum}</TableCell>
                   <TableCell>{order.collectionDate}</TableCell>
@@ -77,7 +101,7 @@ const RejectedOrdersPage = () => {
                   <TableCell>
                     <Chip
                       label={order.orderStatus}
-                      color={statusObj[order.orderStatus].color}
+                      color="warning"
                       sx={{
                         height: 24,
                         fontSize: '0.75rem',
@@ -96,4 +120,4 @@ const RejectedOrdersPage = () => {
   );
 };
 
-export default RejectedOrdersPage;
+export default AcceptedOrdersPage;

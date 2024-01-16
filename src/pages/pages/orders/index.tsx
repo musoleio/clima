@@ -22,11 +22,11 @@ import TextField from "@mui/material/TextField";
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { useFetchOrders } from 'src/@core/hooks/useFetchOrders';
+import { useOrders } from 'src/@core/hooks/useOrders';
 import exportDataToExcel from "../../../configs/exportToExcel";
 import firebase from '../../../firebase/config';
 import PrivateRoute from "../../privateRoute";
-import { Order } from '../acceptedorders';
+import { Order } from 'src/@core/utils/types';
 
 interface StatusObj {
   [key: string]: {
@@ -34,6 +34,7 @@ interface StatusObj {
   }
 }
 const statusObj: StatusObj = {
+  'accepted pending': {  color: 'warning'},
   pending: { color: 'info' },
   rejected: { color: 'error' },
   accepted: { color: 'success' }
@@ -50,7 +51,7 @@ const OrderRow = ({ order, router }) => {
         <TableCell>{order.installmentAmount}</TableCell>
         <TableCell>{order.totalPrice}</TableCell>
         <TableCell>{order.collectionDate}</TableCell>
-        <TableCell>
+        <TableCell align='center'>
           <Chip label={order.orderStatus} color={statusObj[order.orderStatus].color} />
         </TableCell>
       </TableRow>
@@ -65,26 +66,27 @@ const OrdersPage = (props) => {
   const [searchBy, setSearchBy] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [filteredData, setFilteredData] = useState<Order[]>([]);
-  const [orders, isLoadingOrders, errorLoadingOrders] = useFetchOrders();
-
-  console.log(orders);
+  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders();
 
   useEffect(() => {
     if (orders) {
       let filtered = orders;
-      if (statusFilter || searchQuery) {
+      if (statusFilter || categoryFilter || searchQuery) {
+        console.log(categoryFilter);
         filtered = orders
           .filter((order) => {
             const matcheStatusFilter = !statusFilter || statusFilter === (order.orderStatus);
+            const matchesCategoryFilter = !categoryFilter || categoryFilter === (order.category);
             const matchesSearchBy = !searchBy || order[searchBy].startsWith(searchQuery.trim());
-            return matcheStatusFilter && matchesSearchBy;
+            return matcheStatusFilter && matchesCategoryFilter && matchesSearchBy;
           });
       }
       filtered.sort((a, b) => b.timeStamp.seconds - a.timeStamp.seconds);
       setFilteredData(filtered);
     }
-  }, [orders, searchQuery, searchBy, statusFilter]);
+  }, [orders, searchQuery, searchBy, statusFilter, categoryFilter]);
 
   const handleChangeSearchTarget = (event) => {
     setSearchBy(event.target.value);
@@ -111,21 +113,21 @@ const OrdersPage = (props) => {
       const data = [];
 
       // Iterate through each document in the value array
-      for (const docSnapshot of orders.docs) {
-        const orderData = docSnapshot.data();
+      for (const order of filteredData) {
+        // const order = docSnapshot.data();
 
         // Fetch the user document from the "users" collection using createdBy
-        const userDocRef = doc(getFirestore(firebase), 'users', orderData.createdBy);
+        const userDocRef = doc(getFirestore(firebase), 'users', order?.createdBy);
         const userDocSnapshot = await getDoc(userDocRef);
         const userData = userDocSnapshot.data();
 
         // Add the agent property to the orderData object
-        orderData.agent = {
+        order.agent = {
           firstName: userData?.firstName || '',
           lastName: userData?.lastName || '',
         };
 
-        data.push(orderData);
+        data.push(order);
       }
 
       exportDataToExcel(data, 'orders', 'output.xlsx', 'orders');
@@ -159,8 +161,28 @@ const OrdersPage = (props) => {
             >
               <MenuItem value="">All</MenuItem>
               <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="accepted pending">Accepted Pending</MenuItem>
               <MenuItem value="accepted">Accepted</MenuItem>
               <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControl sx={{ minWidth: 120, marginRight: '16px' }}>
+            <InputLabel id="category-filter-label">Category</InputLabel>
+            <Select
+              labelId="category-filter-label"
+              label="Category"
+              id="category-filter"
+              value={categoryFilter}
+              onChange={(event) => {
+                setCategoryFilter(event.target.value);
+              }}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="mpower">MPower</MenuItem>
+              <MenuItem value="climate">Climate</MenuItem>
+              <MenuItem value="smartbuy">Smartbuy</MenuItem>
             </Select>
           </FormControl>
         </Box>
