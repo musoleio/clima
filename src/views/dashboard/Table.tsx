@@ -1,23 +1,23 @@
 // ** MUI Imports
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import Chip from '@mui/material/Chip'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import Typography from '@mui/material/Typography'
 
 // ** Types Imports
-import { ThemeColor } from 'src/@core/layouts/types';
+import { ThemeColor } from 'src/@core/layouts/types'
 
-import { Pagination } from "@mui/lab";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { useOrders } from 'src/@core/hooks/useOrders';
-import { Order } from 'src/pages/pages/acceptedorders';
+import { Pagination } from '@mui/lab'
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
+import { useOrders } from 'src/@core/hooks/useOrders'
+import { Order } from 'src/pages/pages/acceptedorders'
 
 interface RowType {
   name: string
@@ -34,49 +34,48 @@ interface StatusObj {
   }
 }
 
-const rows: RowType[] = [
-
-];
+const rows: RowType[] = []
 
 const statusObj: StatusObj = {
+  'accepted pending': { color: 'warning' },
   pending: { color: 'info' },
   rejected: { color: 'error' },
   accepted: { color: 'success' }
-};
+}
 
 const DashboardTable = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 3;
-  const router = useRouter();
-  const [sortedOrders, setSortedOrders] = useState<Order[]>([]);
-  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders();
+  const [currentPage, setCurrentPage] = useState(1)
+  const ordersPerPage = 3
+  const router = useRouter()
+  const [sortedOrders, setSortedOrders] = useState<Order[]>([])
+  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders()
 
   useEffect(() => {
     if (orders) {
       const sorted = orders.sort((a, b) => {
-        const timestampA = a.timeStamp.seconds;
-        const timestampB = b.timeStamp.seconds;
+        const timestampA = a.timeStamp.seconds
+        const timestampB = b.timeStamp.seconds
 
-        return timestampB - timestampA;
-      });
-      setSortedOrders(sorted);
+        return timestampB - timestampA
+      })
+      setSortedOrders(sorted)
     }
-  }, [orders]);
+  }, [orders])
 
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = sortedOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
+  const currentOrders = sortedOrders.slice(indexOfFirstOrder, indexOfLastOrder)
 
   const handlePageChange = (event, page) => {
-    setCurrentPage(page);
-  };
+    setCurrentPage(page)
+  }
 
   if (isLoadingOrders) {
-    return 'loading...';
+    return 'loading...'
   }
 
   if (errorLoadingOrders) {
-    return `Error fetching data: ${errorLoadingOrders}`;
+    return `Error fetching data: ${errorLoadingOrders}`
   }
 
   return (
@@ -95,11 +94,18 @@ const DashboardTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {currentOrders.map((order) => (
-                <TableRow onClick={() => router.push(`/pages/orders/${order.id}`)} hover key={order.id} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
+              {currentOrders.map(order => (
+                <TableRow
+                  onClick={() => router.push(`/pages/orders/${order.id}`)}
+                  hover
+                  key={order.id}
+                  sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}
+                >
                   <TableCell sx={{ py: theme => `${theme.spacing(0.5)} !important` }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}>{`${order.firstName} ${order.lastName}`}</Typography>
+                      <Typography
+                        sx={{ fontWeight: 500, fontSize: '0.875rem !important' }}
+                      >{`${order.firstName} ${order.lastName}`}</Typography>
                     </Box>
                   </TableCell>
                   <TableCell>{order.itemNum}</TableCell>
@@ -129,13 +135,12 @@ const DashboardTable = () => {
             count={Math.ceil(sortedOrders.length / ordersPerPage)}
             page={currentPage}
             onChange={handlePageChange}
-            color="primary"
+            color='primary'
           />
         </Box>
       </Card>
     </>
+  )
+}
 
-  );
-};
-
-export default DashboardTable;
+export default DashboardTable
