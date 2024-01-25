@@ -23,13 +23,15 @@ import { SettingsConsumer, SettingsProvider } from 'src/@core/context/settingsCo
 
 // ** Utils Imports
 import { createEmotionCache } from 'src/@core/utils/create-emotion-cache'
-import { AuthProvider } from "../configs/auth";
+import { AuthProvider } from '../configs/auth'
 
 // ** React Perfect Scrollbar Style
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
 // ** Global css styles
 import '../../styles/globals.css'
+import { LocalizationProvider } from '@mui/x-date-pickers'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 
 // ** Extend App Props with Emotion
 type ExtendedAppProps = AppProps & {
@@ -72,13 +74,15 @@ const App = (props: ExtendedAppProps) => {
       </Head>
 
       <AuthProvider>
-        <SettingsProvider>
-          <SettingsConsumer>
-            {({ settings }) => {
-              return <ThemeComponent settings={settings}>{getLayout(<Component {...pageProps} />)}</ThemeComponent>;
-            }}
-          </SettingsConsumer>
-        </SettingsProvider>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <SettingsProvider>
+            <SettingsConsumer>
+              {({ settings }) => {
+                return <ThemeComponent settings={settings}>{getLayout(<Component {...pageProps} />)}</ThemeComponent>
+              }}
+            </SettingsConsumer>
+          </SettingsProvider>
+        </LocalizationProvider>
       </AuthProvider>
     </CacheProvider>
   )

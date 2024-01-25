@@ -1,7 +1,11 @@
+import { Firestore } from "firebase/firestore";
+
 export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'accepted pending';
 export type FormType = 'loan' | 'hirePurchase';
 
 export type Order = {
+  createdBy(arg0: Firestore, arg1: string, createdBy: any): unknown;
+  agent: { firstName: any; lastName: any; };
   id: string;
   firstName: string;
   lastName: string;

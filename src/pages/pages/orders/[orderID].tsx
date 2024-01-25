@@ -7,6 +7,7 @@ import firebase from "../../../firebase/config";
 import ApexChartWrapper from 'src/@core/styles/libs/react-apexcharts';
 
 import DetailOrder from "../../../layouts/components/detail/OrderDetail";
+import dayjs from 'dayjs';
 
 const OrderDetail = () => {
   const router = useRouter();
