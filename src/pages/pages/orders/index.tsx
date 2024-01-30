@@ -1,32 +1,32 @@
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import Chip from '@mui/material/Chip'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
 
 // ** Types Imports
-import { ThemeColor } from 'src/@core/layouts/types';
+import { ThemeColor } from 'src/@core/layouts/types'
 
-import { Pagination } from "@mui/lab";
-import { CircularProgress } from "@mui/material";
-import Button from "@mui/material/Button";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import TextField from "@mui/material/TextField";
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { useOrders } from 'src/@core/hooks/useOrders';
-import exportDataToExcel from "../../../configs/exportToExcel";
-import firebase from '../../../firebase/config';
-import PrivateRoute from "../../privateRoute";
-import { Order } from 'src/@core/utils/types';
+import { DateRangePicker, Pagination } from '@mui/lab'
+import { CircularProgress } from '@mui/material'
+import Button from '@mui/material/Button'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import TextField from '@mui/material/TextField'
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
+import { useOrders } from 'src/@core/hooks/useOrders'
+import { Order } from 'src/@core/utils/types'
+import { handleExportClick } from 'src/lib/utils'
+import PrivateRoute from '../../privateRoute'
+import { DatePicker } from '@mui/x-date-pickers'
+import dayjs from 'dayjs'
 
 interface StatusObj {
   [key: string]: {
@@ -34,11 +34,11 @@ interface StatusObj {
   }
 }
 const statusObj: StatusObj = {
-  'accepted pending': {  color: 'warning'},
+  'accepted pending': { color: 'warning' },
   pending: { color: 'info' },
   rejected: { color: 'error' },
   accepted: { color: 'success' }
-};
+}
 
 const OrderRow = ({ order, router }) => {
   return (
@@ -56,94 +56,64 @@ const OrderRow = ({ order, router }) => {
         </TableCell>
       </TableRow>
     </>
-  );
-};
+  )
+}
 
-const OrdersPage = (props) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 10;
-  const router = useRouter();
-  const [searchBy, setSearchBy] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [filteredData, setFilteredData] = useState<Order[]>([]);
-  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders();
+const OrdersPage = props => {
+  const [currentPage, setCurrentPage] = useState(1)
+  const ordersPerPage = 10
+  const router = useRouter()
+  const [searchBy, setSearchBy] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [dateFilter, setDateFilter] = useState<dayjs.Dayjs>(null)
+  const [exporting, setExporting] = useState(false)
+  const [filteredData, setFilteredData] = useState<Order[]>([])
+  const [orders, isLoadingOrders, errorLoadingOrders] = useOrders()
 
   useEffect(() => {
     if (orders) {
-      let filtered = orders;
-      if (statusFilter || categoryFilter || searchQuery) {
-        console.log(categoryFilter);
-        filtered = orders
-          .filter((order) => {
-            const matcheStatusFilter = !statusFilter || statusFilter === (order.orderStatus);
-            const matchesCategoryFilter = !categoryFilter || categoryFilter === (order.category);
-            const matchesSearchBy = !searchBy || order[searchBy].startsWith(searchQuery.trim());
-            return matcheStatusFilter && matchesCategoryFilter && matchesSearchBy;
-          });
+      let filtered = orders
+      if (statusFilter || categoryFilter || searchQuery || dateFilter) {
+        filtered = orders.filter(order => {
+          const matcheStatusFilter = !statusFilter || statusFilter === order.orderStatus
+          const matchesCategoryFilter = !categoryFilter || categoryFilter === order.category
+          const matchesSearchBy = !searchBy || order[searchBy].startsWith(searchQuery.trim())
+          const matchesDateFilter = !dateFilter || dayjs(dateFilter).isSame(dayjs(order.timeStamp.seconds), 'day')
+
+          return matcheStatusFilter && matchesCategoryFilter && matchesSearchBy && matchesDateFilter
+        })
       }
-      filtered.sort((a, b) => b.timeStamp.seconds - a.timeStamp.seconds);
-      setFilteredData(filtered);
+      filtered.sort((a, b) => b.timeStamp.seconds - a.timeStamp.seconds)
+      setFilteredData(filtered)
     }
-  }, [orders, searchQuery, searchBy, statusFilter, categoryFilter]);
+  }, [orders, searchQuery, searchBy, statusFilter, categoryFilter, dateFilter])
 
-  const handleChangeSearchTarget = (event) => {
-    setSearchBy(event.target.value);
-  };
+  const handleChangeSearchTarget = event => {
+    setSearchBy(event.target.value)
+  }
 
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value.toLowerCase());
-  };
+  const handleSearchChange = event => {
+    setSearchQuery(event.target.value.toLowerCase())
+  }
 
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredData.slice(indexOfFirstOrder, indexOfLastOrder);
+  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
+  const currentOrders = filteredData.slice(indexOfFirstOrder, indexOfLastOrder)
 
   const handlePageChange = (event, page) => {
-    setCurrentPage(page);
-  };
-
-  const [exporting, setExporting] = useState(false);
-
-  const handleExportClick = async () => {
-    if (orders) {
-      setExporting(true);
-
-      const data = [];
-
-      // Iterate through each document in the value array
-      for (const order of filteredData) {
-        // const order = docSnapshot.data();
-
-        // Fetch the user document from the "users" collection using createdBy
-        const userDocRef = doc(getFirestore(firebase), 'users', order?.createdBy);
-        const userDocSnapshot = await getDoc(userDocRef);
-        const userData = userDocSnapshot.data();
-
-        // Add the agent property to the orderData object
-        order.agent = {
-          firstName: userData?.firstName || '',
-          lastName: userData?.lastName || '',
-        };
-
-        data.push(order);
-      }
-
-      exportDataToExcel(data, 'orders', 'output.xlsx', 'orders');
-
-      setExporting(false);
-    }
-  };
+    setCurrentPage(page)
+  }
 
   if (isLoadingOrders) {
-    return 'loading...';
+    return 'loading...'
   }
 
   if (errorLoadingOrders) {
-    console.error(errorLoadingOrders);
+    console.error(errorLoadingOrders)
 
-    return `Error here fetching data: ${errorLoadingOrders}`;
+    return `Error here fetching data: ${errorLoadingOrders}`
   }
 
   return (
@@ -151,67 +121,71 @@ const OrdersPage = (props) => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <FormControl sx={{ minWidth: 120, marginRight: '16px' }}>
-            <InputLabel id="status-filter-label">Status</InputLabel>
+            <InputLabel id='status-filter-label'>Status</InputLabel>
             <Select
-              labelId="status-filter-label"
-              label="Status"
-              id="status-filter"
+              labelId='status-filter-label'
+              label='Status'
+              id='status-filter'
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+              onChange={event => setStatusFilter(event.target.value)}
             >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="accepted pending">Accepted Pending</MenuItem>
-              <MenuItem value="accepted">Accepted</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
+              <MenuItem value=''>All</MenuItem>
+              <MenuItem value='pending'>Pending</MenuItem>
+              <MenuItem value='accepted pending'>Accepted Pending</MenuItem>
+              <MenuItem value='accepted'>Accepted</MenuItem>
+              <MenuItem value='rejected'>Rejected</MenuItem>
             </Select>
           </FormControl>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <FormControl sx={{ minWidth: 120, marginRight: '16px' }}>
-            <InputLabel id="category-filter-label">Category</InputLabel>
+            <InputLabel id='category-filter-label'>Category</InputLabel>
             <Select
-              labelId="category-filter-label"
-              label="Category"
-              id="category-filter"
+              labelId='category-filter-label'
+              label='Category'
+              id='category-filter'
               value={categoryFilter}
-              onChange={(event) => {
-                setCategoryFilter(event.target.value);
+              onChange={event => {
+                setCategoryFilter(event.target.value)
               }}
             >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="mpower">MPower</MenuItem>
-              <MenuItem value="climate">Climate</MenuItem>
-              <MenuItem value="smartbuy">Smartbuy</MenuItem>
+              <MenuItem value=''>All</MenuItem>
+              <MenuItem value='mpower'>MPower</MenuItem>
+              <MenuItem value='climate'>Climate</MenuItem>
+              <MenuItem value='smartbuy'>Smartbuy</MenuItem>
             </Select>
           </FormControl>
         </Box>
         <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel id="search-target-label">Search By</InputLabel>
+          <InputLabel id='search-target-label'>Search By</InputLabel>
           <Select
-            labelId="search-target-label"
-            id="search-target"
+            labelId='search-target-label'
+            id='search-target'
             value={searchBy}
-            label="Search By"
+            label='Search By'
             onChange={handleChangeSearchTarget}
           >
-            <MenuItem value="">None</MenuItem>
-            <MenuItem value="nrc">NRC</MenuItem>
-            <MenuItem value="collectionDate">Collection Date</MenuItem>
-            <MenuItem value="employeeNumber">Employee Number</MenuItem>
-            <MenuItem value="firstName">First Name</MenuItem>
-            <MenuItem value="lastName">Last Name</MenuItem>
+            <MenuItem value=''>None</MenuItem>
+            <MenuItem value='nrc'>NRC</MenuItem>
+            <MenuItem value='collectionDate'>Collection Date</MenuItem>
+            <MenuItem value='employeeNumber'>Employee Number</MenuItem>
+            <MenuItem value='firstName'>First Name</MenuItem>
+            <MenuItem value='lastName'>Last Name</MenuItem>
           </Select>
         </FormControl>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <TextField
-            id="search-query"
-            label="Search"
-            value={searchQuery}
-            onChange={handleSearchChange}
+          <TextField id='search-query' label='Search' value={searchQuery} onChange={handleSearchChange} />
+        </Box>
+        <Box>
+          <DatePicker
+          label="Date Submitted"
+            onChange={(newValue: any) => setDateFilter(newValue)}
+            slotProps={{
+              field: { clearable: true, onClear: () => setDateFilter(null) }
+            }}
           />
         </Box>
-        <Button variant="contained" onClick={handleExportClick} disabled={exporting}>
+        <Button variant='contained' onClick={() => handleExportClick(currentOrders, setExporting)} disabled={exporting}>
           {exporting ? 'Exporting data...' : 'Export to Excel'}
           {exporting && <CircularProgress size={20} style={{ marginLeft: '10px' }} />}
         </Button>
@@ -232,7 +206,9 @@ const OrdersPage = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {currentOrders.map((order) => <OrderRow order={order} router={router} key={order.id} />)}
+              {currentOrders.map(order => (
+                <OrderRow order={order} router={router} key={order.id} />
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -243,11 +219,11 @@ const OrdersPage = (props) => {
           count={Math.ceil(filteredData.length / ordersPerPage)}
           page={currentPage}
           onChange={handlePageChange}
-          color="primary"
+          color='primary'
         />
       </Box>
     </PrivateRoute>
-  );
-};
+  )
+}
 
-export default OrdersPage;
+export default OrdersPage
